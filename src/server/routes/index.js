@@ -4,6 +4,7 @@ const router = Router();
 // Importamos las rutas de Usuarios
 const usuarioRoutes = require('./usuarios/usuario.routes');
 const docenteRoutes = require('./usuarios/docente.routes');
+const authRoutes = require('./usuarios/auth.routes');
 
 // Importamos las rutas de Escuela
 const asignaturaRoutes = require('./escuela/asignatura.routes');
@@ -20,6 +21,7 @@ const horarioRoutes = require('./operaciones/horario.routes');
 // ==========================================
 
 // Rutas de Usuarios
+router.use('/auth', authRoutes);
 router.use('/usuarios', usuarioRoutes); 
 router.use('/docentes', docenteRoutes); 
 

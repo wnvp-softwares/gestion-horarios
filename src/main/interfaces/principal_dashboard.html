@@ -1,27 +1,23 @@
 <div class="dashboard-contenedor">
 
     <div class="grid-estadisticas">
-
+        
         <div class="tarjeta-stat">
             <div class="info-stat">
                 <span class="titulo-stat">Total Docentes</span>
-                <span class="valor-stat">48</span>
+                <span class="valor-stat" id="dash-total-docentes">0</span>
                 <div class="tendencia-stat">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    <span>+2 nuevos</span>
+                    <span>Registrados</span>
                 </div>
             </div>
             <div class="icono-stat fondo-azul">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
             </div>
         </div>
@@ -29,23 +25,19 @@
         <div class="tarjeta-stat">
             <div class="info-stat">
                 <span class="titulo-stat">Total Grupos</span>
-                <span class="valor-stat">24</span>
+                <span class="valor-stat" id="dash-total-grupos">0</span>
                 <div class="tendencia-stat">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    <span>100% activos</span>
+                    <span>Activos</span>
                 </div>
             </div>
             <div class="icono-stat fondo-verde">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
             </div>
         </div>
@@ -53,19 +45,17 @@
         <div class="tarjeta-stat">
             <div class="info-stat">
                 <span class="titulo-stat">Total Asignaturas</span>
-                <span class="valor-stat">62</span>
+                <span class="valor-stat" id="dash-total-asignaturas">0</span>
                 <div class="tendencia-stat">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    <span>Plan 2026</span>
+                    <span>En catálogo</span>
                 </div>
             </div>
             <div class="icono-stat fondo-morado">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
                     <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
                 </svg>
@@ -75,19 +65,17 @@
         <div class="tarjeta-stat">
             <div class="info-stat">
                 <span class="titulo-stat">Periodo Activo</span>
-                <span class="valor-stat">Ene-Jun 2026</span>
+                <span class="valor-stat" id="dash-periodo-activo" style="font-size: 1.25rem; line-height: 1.875rem;">Cargando...</span>
                 <div class="tendencia-stat">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
-                    <span>En curso</span>
+                    <span id="dash-periodo-estado">...</span>
                 </div>
             </div>
             <div class="icono-stat fondo-naranja">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
                     <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -98,27 +86,19 @@
     </div>
 
     <div class="grid-paneles">
-
+        
         <div class="panel-dashboard">
             <div class="cabecera-panel">
                 <h2 class="titulo-panel">Horarios de clase por día</h2>
             </div>
-
+            
             <div class="grafico-contenedor">
                 <div class="eje-y">
-                    <span>16</span>
-                    <span>12</span>
-                    <span>8</span>
-                    <span>4</span>
-                    <span>0</span>
+                    <span>16</span><span>12</span><span>8</span><span>4</span><span>0</span>
                 </div>
-
+                
                 <div class="lineas-guia">
-                    <div class="linea-guia"></div>
-                    <div class="linea-guia"></div>
-                    <div class="linea-guia"></div>
-                    <div class="linea-guia"></div>
-                    <div class="linea-guia"></div>
+                    <div class="linea-guia"></div><div class="linea-guia"></div><div class="linea-guia"></div><div class="linea-guia"></div><div class="linea-guia"></div>
                 </div>
 
                 <div class="barras-grafico">
@@ -130,127 +110,20 @@
                 </div>
 
                 <div class="eje-x">
-                    <span>Lun</span>
-                    <span>Mar</span>
-                    <span>Mié</span>
-                    <span>Jue</span>
-                    <span>Vie</span>
+                    <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span>
                 </div>
             </div>
         </div>
 
         <div class="panel-dashboard">
             <div class="cabecera-panel">
-                <h2 class="titulo-panel">Clases de Hoy</h2>
+                <h2 class="titulo-panel" id="dash-titulo-hoy">Clases de Hoy</h2>
             </div>
-
-            <div class="lista-clases-scroll">
-
-                <div class="item-clase">
-                    <span class="hora-clase">08:00</span>
-                    <div class="punto-indicador punto-azul"></div>
-                    <div class="tarjeta-clase clase-estilo-azul">
-                        <h4 class="titulo-clase">Matemáticas Avanzadas</h4>
-                        <div class="info-clase-meta">
-                            <div class="grupo-clase">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Grupo 5A</span>
-                            </div>
-                            <span>Ing. Carlos Mendoza</span>
-                        </div>
-                    </div>
+            
+            <div class="lista-clases-scroll" id="dash-lista-clases">
+                <div style="text-align: center; color: var(--color-texto-secundario); padding: 2rem;">
+                    Cargando clases...
                 </div>
-
-                <div class="item-clase">
-                    <span class="hora-clase">10:00</span>
-                    <div class="punto-indicador punto-morado"></div>
-                    <div class="tarjeta-clase clase-estilo-morado">
-                        <h4 class="titulo-clase">Física Cuántica</h4>
-                        <div class="info-clase-meta">
-                            <div class="grupo-clase">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Grupo 5B</span>
-                            </div>
-                            <span>Dra. Elena Rivas</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="item-clase">
-                    <span class="hora-clase">12:00</span>
-                    <div class="punto-indicador punto-verde"></div>
-                    <div class="tarjeta-clase clase-estilo-verde">
-                        <h4 class="titulo-clase">Programación Web</h4>
-                        <div class="info-clase-meta">
-                            <div class="grupo-clase">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Grupo 3A</span>
-                            </div>
-                            <span>Mtro. Juan Pérez</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="item-clase">
-                    <span class="hora-clase">14:00</span>
-                    <div class="punto-indicador punto-naranja"></div>
-                    <div class="tarjeta-clase clase-estilo-naranja">
-                        <h4 class="titulo-clase">Bases de Datos</h4>
-                        <div class="info-clase-meta">
-                            <div class="grupo-clase">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Grupo 3B</span>
-                            </div>
-                            <span>Ing. Ana López</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="item-clase">
-                    <span class="hora-clase">16:00</span>
-                    <div class="punto-indicador punto-azul"></div>
-                    <div class="tarjeta-clase clase-estilo-azul">
-                        <h4 class="titulo-clase">Redes de Computadoras</h4>
-                        <div class="info-clase-meta">
-                            <div class="grupo-clase">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span>Grupo 5C</span>
-                            </div>
-                            <span>Ing. Carlos Mendoza</span>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
