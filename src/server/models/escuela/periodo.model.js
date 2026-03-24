@@ -7,10 +7,22 @@ const Periodo = sequelize.define('Periodo', {
         primaryKey: true,
         autoIncrement: true
     },
-    nombre: { type: DataTypes.STRING(100), allowNull: false },
-    fecha_inicio: { type: DataTypes.DATEONLY, allowNull: false },
-    fecha_fin: { type: DataTypes.DATEONLY, allowNull: false },
-    es_activo: { type: DataTypes.BOOLEAN, defaultValue: false }
+    nombre: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+    },
+    fecha_inicio: {
+        type: DataTypes.DATEONLY,
+        allowNull: false
+    },
+    fecha_fin: {
+        type: DataTypes.DATEONLY,
+        allowNull: false
+    },
+    es_activo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    }
 }, {
     tableName: 'periodos',
     timestamps: true,
