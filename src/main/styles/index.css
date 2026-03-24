@@ -1,0 +1,235 @@
+/* ==========================================================
+   CSS GLOBAL - SISTEMA DE HORARIOS DOCENTES
+   Uso: Reutilizable para todas las ventanas del proyecto.
+   ========================================================== */
+:root {
+    --color-primario: #2563eb;          
+    --color-primario-hover: #1d4ed8;    
+    --color-fondo-app: #f3f4f6;        
+    --color-blanco: #ffffff;
+    --color-negro: #111827;
+    --color-texto-principal: #1f2937;
+    --color-texto-secundario: #6b7280;
+
+    --color-borde-input: #d1d5db;
+    --color-fondo-input: #f9fafb;
+    --color-error-fondo: #fee2e2;      
+    --color-error-texto: #dc2626;       
+
+    --fuente-principal: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --tamano-fuente-base: 16px;
+    --tamano-fuente-titulo: 1.5rem;    
+    --tamano-fuente-subtitulo: 1rem;   
+    --tamano-fuente-pequena: 0.875rem; 
+
+    --radio-borde: 0.5rem;             
+    --ancho-sidebar-fija: 260px;       
+    --sombra-suave: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --sombra-media: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* 2. ESTILOS BASE Y RESET
+   ========================================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--fuente-principal);
+    font-size: var(--tamano-fuente-base);
+    background-color: var(--color-fondo-app);
+    color: var(--color-texto-principal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. CLASES UTILITARIAS Y DE ESTRUCTURA RESPONSIVA
+   ========================================================== */
+
+.contenedor-principal {
+    display: flex;
+    min-height: 100vh;
+}
+
+.layout-con-sidebar {
+    display: flex;
+    width: 100%;
+}
+
+.contenido-pagina {
+    flex: 1;
+    padding: 2rem;
+    transition: margin-left 0.3s ease;
+}
+
+.centrado-absoluto {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    padding: 1rem;
+}
+
+.oculto {
+    display: none !important;
+}
+
+/* 4. ELEMENTOS DE FORMULARIO REUTILIZABLES
+   ========================================================== */
+
+.grupo-formulario {
+    margin-bottom: 1.25rem;
+}
+
+.etiqueta-formulario {
+    display: block;
+    font-weight: 500;
+    font-size: var(--tamano-fuente-pequena);
+    color: var(--color-texto-principal);
+    margin-bottom: 0.5rem;
+}
+
+.contenedor-input-icono {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-estandar {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    padding-left: 2.75rem; 
+    font-size: var(--tamano-fuente-base);
+    background-color: var(--color-fondo-input);
+    border: 1px solid var(--color-borde-input);
+    border-radius: var(--radio-borde);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-estandar:focus {
+    outline: none;
+    border-color: var(--color-primario);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.icono-input-izq {
+    position: absolute;
+    left: 1rem;
+    color: var(--color-texto-secundario);
+    font-size: 1.2rem;
+}
+
+/* 5. BOTONES REUTILIZABLES
+   ========================================================== */
+.boton-base {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: var(--radio-borde);
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    text-decoration: none;
+    font-size: var(--tamano-fuente-base);
+}
+
+.boton-base:active {
+    transform: translateY(1px);
+}
+
+.boton-primario {
+    background-color: var(--color-primario);
+    color: var(--color-blanco);
+    width: 100%;
+}
+
+.boton-primario:hover {
+    background-color: var(--color-primario-hover);
+}
+
+/* 6. ENLACES Y TEXTOS ESPECIALES
+   ========================================================== */
+.enlace-simple {
+    color: var(--color-primario);
+    text-decoration: none;
+    font-size: var(--tamano-fuente-pequena);
+    transition: color 0.2s ease;
+}
+
+.enlace-simple:hover {
+    color: var(--color-primario-hover);
+    text-decoration: underline;
+}
+
+.texto-secundario {
+    color: var(--color-texto-secundario);
+    font-size: var(--tamano-fuente-pequena);
+}
+
+/* 7. COMPONENTES ESPECÍFICOS
+   ========================================================== */
+
+.tarjeta {
+    background-color: var(--color-blanco);
+    border-radius: var(--radio-borde);
+    box-shadow: var(--sombra-media);
+    padding: 2.5rem;
+    width: 100%;
+}
+
+.mensaje-alerta {
+    display: flex;
+    align-items: start;
+    padding: 1rem;
+    border-radius: var(--radio-borde);
+    margin-bottom: 1.5rem;
+    font-size: var(--tamano-fuente-pequena);
+}
+
+.alerta-error {
+    background-color: var(--color-error-fondo);
+    color: var(--color-error-texto);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.icono-alerta {
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+/* ==========================================================
+   8. MEDIA QUERIES - RESPONSIVE DESIGN Global
+   ========================================================== */
+
+/* Dispositivos Móviles (hasta 768px) */
+@media (max-width: 767px) {
+    .contenedor-principal {
+        padding: 0;
+    }
+
+    .centrado-absoluto {
+        align-items: start; 
+        padding: 0;
+    }
+
+    .tarjeta {
+        border-radius: 0; 
+        min-height: 100vh;
+        padding: 2rem 1.5rem;
+    }
+
+    .layout-con-sidebar .sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 1000;
+    }
+
+    .layout-con-sidebar.sidebar-visible .sidebar {
+        transform: translateX(0);
+    }
+}
