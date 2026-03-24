@@ -12,7 +12,6 @@ CREATE TABLE usuarios (
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-select * from horarios_generados;
 -- 3. Tabla de Periodos
 CREATE TABLE periodos (
     id INT AUTO_INCREMENT PRIMARY KEY,
