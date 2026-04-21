@@ -326,90 +326,203 @@ document.addEventListener('DOMContentLoaded', () => {
         // ---------------------------------------------------------
         // MÓDULO: DOCENTES
         // ---------------------------------------------------------
+        // Estado global del módulo de docentes
+        let estadoDocentes = {
+            paginaActual: 1,
+            busqueda: '',
+            limite: 6
+        };
+
         async function cargarListaDocentes() {
             try {
-                const docentes = await fetchAPI('/docentes');
+                const url = `/docentes?page=${estadoDocentes.paginaActual}&search=${estadoDocentes.busqueda}&limit=${estadoDocentes.limite}`;
+                const data = await fetchAPI(url);
+
                 const tbody = document.querySelector('.vista-docentes .tabla-datos tbody');
                 if (!tbody) return;
                 tbody.innerHTML = '';
 
-                if (docentes.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 2rem;">No hay docentes registrados.</td></tr>`;
+                if (data.docentes.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 2rem;">No se encontraron docentes.</td></tr>`;
+                    actualizarPaginacion(0, 0);
                     return;
                 }
 
-                docentes.forEach(doc => {
+                data.docentes.forEach(doc => {
                     const iniciales = doc.nombre_completo.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                     const estadoClase = doc.es_activo ? 'estado-activo' : 'estado-inactivo';
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>
-                                <div class="perfil-celda">
-                                    <div class="avatar-iniciales">${iniciales}</div>
-                                    <div class="info-texto">
-                                        <span class="texto-principal">${doc.prefijo || ''} ${doc.nombre_completo}</span>
-                                        <span class="texto-menor">ID: ${doc.identificador}</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><div class="item-icono-texto"><span>${doc.especialidad || 'Sin especialidad'}</span></div></td>
-                            <td>
-                                <div class="celda-icono-texto">
-                                    <div class="item-icono-texto"><span>${doc.correo}</span></div>
-                                    <div class="item-icono-texto"><span>${doc.telefono || 'Sin teléfono'}</span></div>
-                                </div>
-                            </td>
-                            <td><div class="etiqueta-estado ${estadoClase}"><span class="punto-estado"></span> ${doc.es_activo ? 'Activo' : 'Inactivo'}</div></td>
-                            <td></td>
-                        </tr>
-                    `;
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                <td>
+                    <div class="perfil-celda">
+                        <div class="avatar-iniciales">${iniciales}</div>
+                        <div class="info-texto">
+                            <span class="texto-principal">${doc.prefijo || ''} ${doc.nombre_completo}</span>
+                            <span class="texto-menor">ID: ${doc.identificador}</span>
+                        </div>
+                    </div>
+                </td>
+                <td><div class="item-icono-texto"><span>${doc.especialidad || 'Sin especialidad'}</span></div></td>
+                <td>
+                    <div class="celda-icono-texto">
+                        <div class="item-icono-texto"><span>${doc.correo}</span></div>
+                        <div class="item-icono-texto"><span>${doc.telefono || 'Sin teléfono'}</span></div>
+                    </div>
+                </td>
+                <td><div class="etiqueta-estado ${estadoClase}"><span class="punto-estado"></span> ${doc.es_activo ? 'Activo' : 'Inactivo'}</div></td>
+                <td>
+                    <button class="boton-accion edit-btn" data-id="${doc.id}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                </td>
+            `;
+
+                    tr.querySelector('.edit-btn').addEventListener('click', () => prepararEdicionDocente(doc));
+                    tbody.appendChild(tr);
                 });
-            } catch (error) { console.error(error); }
+
+                actualizarPaginacion(data.total, data.paginas);
+            } catch (error) {
+                console.error("Error al cargar docentes:", error);
+            }
+        }
+
+        function actualizarPaginacion(total, paginas) {
+            const info = document.querySelector('.texto-paginacion');
+            const contenedor = document.querySelector('.controles-paginacion');
+            if (!info || !contenedor) return;
+
+            const inicio = (estadoDocentes.paginaActual - 1) * estadoDocentes.limite + 1;
+            const fin = Math.min(estadoDocentes.paginaActual * estadoDocentes.limite, total);
+
+            info.textContent = `Mostrando ${total > 0 ? inicio : 0} a ${fin} de ${total} docentes`;
+
+            contenedor.innerHTML = '';
+
+            // Botón Anterior
+            const btnAnt = document.createElement('button');
+            btnAnt.className = `boton-pag ${estadoDocentes.paginaActual === 1 ? 'desactivado' : ''}`;
+            btnAnt.textContent = 'Anterior';
+            btnAnt.onclick = () => { if (estadoDocentes.paginaActual > 1) { estadoDocentes.paginaActual--; cargarListaDocentes(); } };
+            contenedor.appendChild(btnAnt);
+
+            // Páginas numéricas
+            for (let i = 1; i <= paginas; i++) {
+                const btn = document.createElement('button');
+                btn.className = `boton-pag ${i === estadoDocentes.paginaActual ? 'activo' : ''}`;
+                btn.textContent = i;
+                btn.onclick = () => { estadoDocentes.paginaActual = i; cargarListaDocentes(); };
+                contenedor.appendChild(btn);
+            }
+
+            // Botón Siguiente
+            const btnSig = document.createElement('button');
+            btnSig.className = `boton-pag ${estadoDocentes.paginaActual === paginas ? 'desactivado' : ''}`;
+            btnSig.textContent = 'Siguiente';
+            btnSig.onclick = () => { if (estadoDocentes.paginaActual < paginas) { estadoDocentes.paginaActual++; cargarListaDocentes(); } };
+            contenedor.appendChild(btnSig);
+        }
+
+        function configurarBusquedaDocentes() {
+            const inputBuscar = document.querySelector('.vista-docentes .input-buscar');
+            if (!inputBuscar) return;
+
+            inputBuscar.addEventListener('input', (e) => {
+                estadoDocentes.busqueda = e.target.value;
+                estadoDocentes.paginaActual = 1; // Reiniciar a la primera página al buscar
+                cargarListaDocentes();
+            });
+        }
+
+        function prepararEdicionDocente(doc) {
+            abrirModal({
+                titulo: 'Editar Docente',
+                textoAccion: 'Actualizar Cambios',
+                contenido: generarFormularioDocente(doc),
+                accion: async () => {
+                    const datosActualizados = capturarDatosFormulario();
+                    if (!validarDatos(datosActualizados)) return;
+
+                    await fetchAPI(`/docentes/${doc.id}`, { method: 'PUT', body: datosActualizados });
+                    cerrarModal();
+                    cargarListaDocentes();
+                }
+            });
         }
 
         function configurarBotonNuevoDocente() {
-            const btnNuevoDocente = document.querySelector('.vista-docentes .boton-primario');
-            if (!btnNuevoDocente) return;
-
-            btnNuevoDocente.addEventListener('click', () => {
+            const btn = document.querySelector('.vista-docentes .boton-primario');
+            if (!btn) return;
+            btn.onclick = () => {
                 abrirModal({
                     titulo: 'Agregar Nuevo Docente',
                     textoAccion: 'Guardar Docente',
-                    contenido: `
-                        <div class="grid-2-columnas">
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Prefijo (Ej. Ing.)</label><input type="text" id="doc-prefijo" class="input-estandar" placeholder="Opcional"></div>
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Identificador (ID)</label><input type="text" id="doc-id" class="input-estandar" placeholder="Ej. DOC-01"></div>
-                        </div>
-                        <div class="grupo-formulario"><label class="etiqueta-formulario">Nombre Completo *</label><input type="text" id="doc-nombre" class="input-estandar" placeholder="Ej. Juan Pérez García"></div>
-                        <div class="grupo-formulario"><label class="etiqueta-formulario">Especialidad</label><input type="text" id="doc-especialidad" class="input-estandar" placeholder="Ej. Matemáticas"></div>
-                        <div class="grid-2-columnas">
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Teléfono</label><input type="text" id="doc-telefono" class="input-estandar" placeholder="10 dígitos"></div>
-                            <div class="grupo-formulario" style="margin-bottom: 0;"><label class="etiqueta-formulario">Correo *</label><input type="email" id="doc-correo" class="input-estandar" placeholder="correo@ejemplo.com"></div>
-                        </div>
-                    `,
+                    contenido: generarFormularioDocente(),
                     accion: async () => {
-                        const nuevoDocente = {
-                            identificador: document.getElementById('doc-id').value,
-                            prefijo: document.getElementById('doc-prefijo').value,
-                            nombre_completo: document.getElementById('doc-nombre').value,
-                            especialidad: document.getElementById('doc-especialidad').value,
-                            telefono: document.getElementById('doc-telefono').value,
-                            correo: document.getElementById('doc-correo').value
-                        };
-
-                        if (!nuevoDocente.nombre_completo || !nuevoDocente.correo || !nuevoDocente.identificador) {
-                            return window.abrirModal({ titulo: 'Faltan Datos', contenido: 'Llena los campos obligatorios.', ocultarCancelar: true });
-                        }
+                        const nuevoDocente = capturarDatosFormulario();
+                        if (!validarDatos(nuevoDocente)) return;
 
                         await fetchAPI('/docentes', { method: 'POST', body: nuevoDocente });
                         cerrarModal();
                         cargarListaDocentes();
                     }
                 });
-            });
+            };
         }
 
+        // Helpers para evitar repetición de código
+        function generarFormularioDocente(doc = {}) {
+            return `
+        <div class="grid-2-columnas">
+            <div class="grupo-formulario"><label>Prefijo</label><input type="text" id="doc-prefijo" class="input-estandar" value="${doc.prefijo || ''}"></div>
+            <div class="grupo-formulario"><label>ID *</label><input type="text" id="doc-id" class="input-estandar" value="${doc.identificador || ''}"></div>
+        </div>
+        <div class="grupo-formulario"><label>Nombre Completo *</label><input type="text" id="doc-nombre" class="input-estandar" value="${doc.nombre_completo || ''}"></div>
+        <div class="grupo-formulario"><label>Especialidad</label><input type="text" id="doc-especialidad" class="input-estandar" value="${doc.especialidad || ''}"></div>
+        <div class="grid-2-columnas">
+            <div class="grupo-formulario"><label>Teléfono</label><input type="text" id="doc-telefono" class="input-estandar" value="${doc.telefono || ''}"></div>
+            <div class="grupo-formulario"><label>Correo *</label><input type="email" id="doc-correo" class="input-estandar" value="${doc.correo || ''}"></div>
+        </div>
+        <div class="grupo-formulario">
+            <label><input type="checkbox" id="doc-activo" ${doc.es_activo !== false ? 'checked' : ''}> Cuenta Activa</label>
+        </div>
+    `;
+        }
+
+        function capturarDatosFormulario() {
+            return {
+                identificador: document.getElementById('doc-id').value,
+                prefijo: document.getElementById('doc-prefijo').value,
+                nombre_completo: document.getElementById('doc-nombre').value,
+                especialidad: document.getElementById('doc-especialidad').value,
+                telefono: document.getElementById('doc-telefono').value,
+                correo: document.getElementById('doc-correo').value,
+                es_activo: document.getElementById('doc-activo').checked
+            };
+        }
+
+        function validarDatos(d) {
+            if (!d.nombre_completo || !d.correo || !d.identificador) {
+                // En lugar de alert, podrías insertar un mensaje en el modal actual
+                const errorMsg = document.createElement('p');
+                errorMsg.style.color = 'red';
+                errorMsg.textContent = ' Por favor, rellena los campos obligatorios (*)';
+
+                const modalCuerpo = document.querySelector('.modal-body'); // Ajusta al selector de tu modal
+                if (modalCuerpo) modalCuerpo.prepend(errorMsg);
+
+                return false;
+            }
+            return true;
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarListaDocentes();
+            configurarBusquedaDocentes();
+            configurarBotonNuevoDocente();
+        });
         // ---------------------------------------------------------
         // MÓDULO: ASIGNATURAS
         // ---------------------------------------------------------
