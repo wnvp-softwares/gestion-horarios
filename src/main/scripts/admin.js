@@ -72,6 +72,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // ====================================================================
     window.abrirModal = function (opciones) {
         let modalGlobal = document.getElementById('modal-global');
+        const btnCerrar = document.getElementById('boton-cerrar-modal');
+            
+            if (btnCerrar) {
+                btnCerrar.onclick = window.cerrarModal;
+            }
+
+            // 2. ASIGNAR FUNCIÓN AL BOTÓN CANCELAR
+            const btnCancelar = document.getElementById('boton-cancelar-modal');
+            if (btnCancelar) {
+                btnCancelar.onclick = window.cerrarModal;
+            }
+
+            // 3. CERRAR AL HACER CLIC FUERA (EN EL FONDO)
+            modalGlobal.onclick = (e) => {
+                if (e.target === modalGlobal) window.cerrarModal();
+            };
 
         if (!modalGlobal) {
             const modalHTML = `
