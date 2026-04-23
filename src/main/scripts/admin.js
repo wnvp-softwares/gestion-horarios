@@ -386,6 +386,28 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Error al cargar docentes:", error);
             }
+            const inputBuscar = document.querySelector('.vista-docentes .input-buscar');
+            
+            //Fragmento para buscqueda de docente
+            let timerBusqueda;
+            let ultimaPeticionId = 0; // Para rastrear cuál es la búsqueda más nueva
+
+            if (!inputBuscar) return;
+
+            inputBuscar.addEventListener('input', (e) => {
+                clearTimeout(timerBusqueda);
+                
+                // Generamos un número único para esta pulsación de tecla
+                const peticionActualId = ++ultimaPeticionId;
+
+                timerBusqueda = setTimeout(() => {
+                    estadoDocentes.busqueda = e.target.value;
+                    estadoDocentes.paginaActual = 1; 
+                    
+                    // Pasamos el ID a la función de carga
+                    cargarListaDocentes(peticionActualId);
+                }, 600);
+            });
         }
 
         function actualizarPaginacion(total, paginas) {
