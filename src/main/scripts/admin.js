@@ -6,19 +6,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const usuarioEnSesion = JSON.parse(localStorage.getItem('usuarioSesion'));
     const esPaginaLogin = document.getElementById('formulario-login') !== null;
 
-    // A. Si NO hay sesión y NO estamos en el login, lo pateamos al index (Seguridad)
     if (!usuarioEnSesion && !esPaginaLogin) {
         window.location.href = 'index.html';
         return;
     }
 
-    // B. Si SÍ hay sesión y está en el login, lo mandamos directo al dashboard
     if (usuarioEnSesion && esPaginaLogin) {
         window.location.href = 'dashboard.html';
         return;
     }
 
-    // C. Si estamos en el dashboard, pintamos sus datos en la cabecera
     if (usuarioEnSesion && !esPaginaLogin) {
         const avatarEtiq = document.getElementById('perfil-avatar');
         const nombreEtiq = document.getElementById('perfil-nombre');
@@ -52,14 +49,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const respuesta = await fetch(url, config);
-            const datos = await respuesta.json();
+            
+            const contentType = respuesta.headers.get("content-type");
+            let datos = {};
+
+            if (contentType && contentType.includes("application/json")) {
+                datos = await respuesta.json();
+            } else {
+                throw new Error(`Ruta no encontrada en el servidor. Asegúrate de reiniciar el backend.`);
+            }
+
             if (!respuesta.ok) throw new Error(datos.error || 'Error en la petición');
             return datos;
+            
         } catch (error) {
             console.error(`Error en API (${endpoint}):`, error);
             window.abrirModal({
                 titulo: 'Error de Conexión',
-                contenido: `<div class="alerta-error" style="padding: 1rem; border-radius: 8px;">${error.message}</div>`,
+                contenido: `<div style="padding: 1rem; border-left: 4px solid #ef4444; background-color: #fee2e2; border-radius: 4px; color: #b91c1c;">
+                                <strong>Detalle del error:</strong><br>${error.message}
+                            </div>`,
                 ocultarCancelar: true,
                 textoAccion: 'Entendido'
             });
@@ -73,21 +82,19 @@ document.addEventListener('DOMContentLoaded', () => {
     window.abrirModal = function (opciones) {
         let modalGlobal = document.getElementById('modal-global');
         const btnCerrar = document.getElementById('boton-cerrar-modal');
-            
-            if (btnCerrar) {
-                btnCerrar.onclick = window.cerrarModal;
-            }
 
-            // 2. ASIGNAR FUNCIÓN AL BOTÓN CANCELAR
-            const btnCancelar = document.getElementById('boton-cancelar-modal');
-            if (btnCancelar) {
-                btnCancelar.onclick = window.cerrarModal;
-            }
+        if (btnCerrar) {
+            btnCerrar.onclick = window.cerrarModal;
+        }
 
-            // 3. CERRAR AL HACER CLIC FUERA (EN EL FONDO)
-            modalGlobal.onclick = (e) => {
-                if (e.target === modalGlobal) window.cerrarModal();
-            };
+        const btnCancelar = document.getElementById('boton-cancelar-modal');
+        if (btnCancelar) {
+            btnCancelar.onclick = window.cerrarModal;
+        }
+
+        modalGlobal.onclick = (e) => {
+            if (e.target === modalGlobal) window.cerrarModal();
+        };
 
         if (!modalGlobal) {
             const modalHTML = `
@@ -131,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
         botonCancelarModal.style.display = opciones.ocultarCancelar ? 'none' : 'inline-flex';
 
         const nuevoBotonAccion = botonAccionModal.cloneNode(true);
+        nuevoBotonAccion.disabled = false; 
+        nuevoBotonAccion.style.opacity = '1';
         botonAccionModal.parentNode.replaceChild(nuevoBotonAccion, botonAccionModal);
 
         if (opciones.accion) {
@@ -175,7 +184,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('usuarioSesion', JSON.stringify(respuesta.usuario));
                 window.location.href = 'dashboard.html';
             } catch (error) {
-                // El error de "contraseña incorrecta" ya lo muestra fetchAPI automáticamente con el Modal
             }
         });
     }
@@ -326,12 +334,38 @@ document.addEventListener('DOMContentLoaded', () => {
         // ---------------------------------------------------------
         // MÓDULO: DOCENTES
         // ---------------------------------------------------------
-        // Estado global del módulo de docentes
         let estadoDocentes = {
             paginaActual: 1,
             busqueda: '',
             limite: 6
         };
+
+        let timerBusquedaDocentes;
+
+        // ¡AQUÍ ESTÁ LA MAGIA VISUAL PARA EL BUSCADOR Y LA TABLA!
+        if (!document.getElementById('estilos-acciones')) {
+            const style = document.createElement('style');
+            style.id = 'estilos-acciones';
+            style.innerHTML = `
+                /* Animaciones Botones */
+                .btn-accion-tabla { background: none; border: none; cursor: pointer; color: #9ca3af; transition: color 0.2s ease, transform 0.1s ease; padding: 0.25rem; }
+                .btn-accion-tabla:active { transform: scale(0.90); }
+                .btn-editar:hover { color: #2563eb !important; }
+                .btn-eliminar:hover { color: #ef4444 !important; }
+                .contenedor-acciones { display: flex; gap: 0.75rem; align-items: center; }
+
+                /* 1. Hacer el buscador más largo y responsivo */
+                .vista-docentes .acciones-herramientas { flex: 1; justify-content: flex-end; display: flex; gap: 1rem; }
+                .vista-docentes .contenedor-buscador { width: 100%; max-width: 380px; transition: all 0.3s ease; }
+                .vista-docentes .contenedor-buscador:focus-within { max-width: 450px; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); border-color: #2563eb; }
+                
+                /* 2. Empujar el pie de página siempre hasta abajo */
+                .vista-docentes .contenedor-tabla { display: flex; flex-direction: column; min-height: calc(100vh - 220px); }
+                .vista-docentes .tabla-datos { margin-bottom: auto; /* Empuja todo lo demás al fondo */ }
+                .vista-docentes .pie-tabla { margin-top: auto; padding-top: 1.5rem; border-top: 1px solid #f3f4f6; }
+            `;
+            document.head.appendChild(style);
+        }
 
         async function cargarListaDocentes() {
             try {
@@ -344,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.docentes.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 2rem;">No se encontraron docentes.</td></tr>`;
-                    actualizarPaginacion(0, 0);
+                    actualizarPaginacion(0, 0); 
                     return;
                 }
 
@@ -354,31 +388,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                <td>
-                    <div class="perfil-celda">
-                        <div class="avatar-iniciales">${iniciales}</div>
-                        <div class="info-texto">
-                            <span class="texto-principal">${doc.prefijo || ''} ${doc.nombre_completo}</span>
-                            <span class="texto-menor">ID: ${doc.identificador}</span>
-                        </div>
-                    </div>
-                </td>
-                <td><div class="item-icono-texto"><span>${doc.especialidad || 'Sin especialidad'}</span></div></td>
-                <td>
-                    <div class="celda-icono-texto">
-                        <div class="item-icono-texto"><span>${doc.correo}</span></div>
-                        <div class="item-icono-texto"><span>${doc.telefono || 'Sin teléfono'}</span></div>
-                    </div>
-                </td>
-                <td><div class="etiqueta-estado ${estadoClase}"><span class="punto-estado"></span> ${doc.es_activo ? 'Activo' : 'Inactivo'}</div></td>
-                <td>
-                    <button class="boton-accion edit-btn" data-id="${doc.id}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                    </button>
-                </td>
-            `;
+                        <td>
+                            <div class="perfil-celda">
+                                <div class="avatar-iniciales">${iniciales}</div>
+                                <div class="info-texto">
+                                    <span class="texto-principal">${doc.prefijo || ''} ${doc.nombre_completo}</span>
+                                    <span class="texto-menor">ID: ${doc.identificador}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><div class="item-icono-texto"><span>${doc.especialidad || 'Sin especialidad'}</span></div></td>
+                        <td>
+                            <div class="celda-icono-texto">
+                                <div class="item-icono-texto"><span>${doc.correo}</span></div>
+                                <div class="item-icono-texto"><span>${doc.telefono || 'Sin teléfono'}</span></div>
+                            </div>
+                        </td>
+                        <td><div class="etiqueta-estado ${estadoClase}"><span class="punto-estado"></span> ${doc.es_activo ? 'Activo' : 'Inactivo'}</div></td>
+                        <td>
+                            <div class="contenedor-acciones">
+                                <button class="btn-accion-tabla btn-editar" title="Editar" data-id="${doc.id}">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                                <button class="btn-accion-tabla btn-eliminar" title="Eliminar" data-id="${doc.id}">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
 
-                    tr.querySelector('.edit-btn').addEventListener('click', () => prepararEdicionDocente(doc));
+                    tr.querySelector('.btn-editar').addEventListener('click', () => prepararEdicionDocente(doc));
+                    tr.querySelector('.btn-eliminar').addEventListener('click', () => prepararEliminacionDocente(doc));
+
                     tbody.appendChild(tr);
                 });
 
@@ -386,27 +435,103 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Error al cargar docentes:", error);
             }
+
+            function configurarBusquedaDocentes() {
+                const inputBuscar = document.querySelector('.vista-docentes .input-buscar');
+                if (!inputBuscar) return;
+
+                inputBuscar.value = estadoDocentes.busqueda;
+
+                inputBuscar.addEventListener('input', (e) => {
+                    clearTimeout(timerBusquedaDocentes);
+
+                    timerBusquedaDocentes = setTimeout(() => {
+                        estadoDocentes.busqueda = e.target.value.trim();
+                        estadoDocentes.paginaActual = 1; 
+                        cargarListaDocentes(); 
+                    }, 500);
+                });
+            }
+
             const inputBuscar = document.querySelector('.vista-docentes .input-buscar');
-            
-            //Fragmento para buscqueda de docente
             let timerBusqueda;
-            let ultimaPeticionId = 0; // Para rastrear cuál es la búsqueda más nueva
+            let ultimaPeticionId = 0;
 
             if (!inputBuscar) return;
 
-            inputBuscar.addEventListener('input', (e) => {
+            const nuevoInputBuscar = inputBuscar.cloneNode(true);
+            inputBuscar.parentNode.replaceChild(nuevoInputBuscar, inputBuscar);
+
+            nuevoInputBuscar.addEventListener('input', (e) => {
                 clearTimeout(timerBusqueda);
-                
-                // Generamos un número único para esta pulsación de tecla
                 const peticionActualId = ++ultimaPeticionId;
 
                 timerBusqueda = setTimeout(() => {
                     estadoDocentes.busqueda = e.target.value;
-                    estadoDocentes.paginaActual = 1; 
-                    
-                    // Pasamos el ID a la función de carga
-                    cargarListaDocentes(peticionActualId);
+                    estadoDocentes.paginaActual = 1;
+                    cargarListaDocentes();
                 }, 600);
+            });
+        }
+
+        function prepararEliminacionDocente(doc) {
+            window.abrirModal({
+                titulo: 'Eliminar Docente',
+                textoAccion: 'Sí, Eliminar',
+                contenido: `
+                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1.5rem 1rem 0.5rem 1rem;">
+                        <div style="background-color: #fee2e2; border-radius: 50%; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <p style="font-size: 1.15rem; color: #374151; margin-bottom: 0.75rem;">
+                            ¿Estás seguro de que deseas eliminar al docente <strong>${doc.prefijo || ''} ${doc.nombre_completo}</strong>?
+                        </p>
+                        <p style="color: #ef4444; font-size: 0.95rem; font-weight: 500; margin: 0;">
+                            Esta acción no se puede deshacer y borrará sus horarios asignados.
+                        </p>
+                    </div>
+                `,
+                accion: async () => {
+                    const btnAccion = document.getElementById('boton-accion-modal');
+                    if(btnAccion) {
+                        btnAccion.disabled = true;
+                        btnAccion.textContent = 'Eliminando...';
+                        btnAccion.style.opacity = '0.7';
+                    }
+
+                    try {
+                        await fetchAPI(`/docentes/${doc.id}`, { method: 'DELETE' });
+                        
+                        window.cerrarModal();
+                        cargarListaDocentes(); 
+                        setTimeout(() => {
+                            window.abrirModal({
+                                titulo: 'Éxito',
+                                contenido: `
+                                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1.5rem 1rem 0.5rem 1rem;">
+                                        <div style="background-color: #d1fae5; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                            </svg>
+                                        </div>
+                                        <p style="font-size: 1.1rem; color: #374151; margin: 0;">Docente eliminado correctamente.</p>
+                                    </div>
+                                `,
+                                ocultarCancelar: true,
+                                textoAccion: 'Entendido'
+                            });
+                        }, 400); 
+                    } catch (error) {
+                        console.error('Error al borrar:', error);
+                        if(btnAccion) {
+                            btnAccion.disabled = false;
+                            btnAccion.textContent = 'Sí, Eliminar';
+                            btnAccion.style.opacity = '1';
+                        }
+                    }
+                }
             });
         }
 
@@ -422,14 +547,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             contenedor.innerHTML = '';
 
-            // Botón Anterior
             const btnAnt = document.createElement('button');
             btnAnt.className = `boton-pag ${estadoDocentes.paginaActual === 1 ? 'desactivado' : ''}`;
             btnAnt.textContent = 'Anterior';
             btnAnt.onclick = () => { if (estadoDocentes.paginaActual > 1) { estadoDocentes.paginaActual--; cargarListaDocentes(); } };
             contenedor.appendChild(btnAnt);
 
-            // Páginas numéricas
             for (let i = 1; i <= paginas; i++) {
                 const btn = document.createElement('button');
                 btn.className = `boton-pag ${i === estadoDocentes.paginaActual ? 'activo' : ''}`;
@@ -438,39 +561,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 contenedor.appendChild(btn);
             }
 
-            // Botón Siguiente
             const btnSig = document.createElement('button');
             btnSig.className = `boton-pag ${estadoDocentes.paginaActual === paginas ? 'desactivado' : ''}`;
             btnSig.textContent = 'Siguiente';
             btnSig.onclick = () => { if (estadoDocentes.paginaActual < paginas) { estadoDocentes.paginaActual++; cargarListaDocentes(); } };
             contenedor.appendChild(btnSig);
-        }
-
-        function configurarBusquedaDocentes() {
-            const inputBuscar = document.querySelector('.vista-docentes .input-buscar');
-            if (!inputBuscar) return;
-
-            inputBuscar.addEventListener('input', (e) => {
-                estadoDocentes.busqueda = e.target.value;
-                estadoDocentes.paginaActual = 1; // Reiniciar a la primera página al buscar
-                cargarListaDocentes();
-            });
-        }
-
-        function prepararEdicionDocente(doc) {
-            abrirModal({
-                titulo: 'Editar Docente',
-                textoAccion: 'Actualizar Cambios',
-                contenido: generarFormularioDocente(doc),
-                accion: async () => {
-                    const datosActualizados = capturarDatosFormulario();
-                    if (!validarDatos(datosActualizados)) return;
-
-                    await fetchAPI(`/docentes/${doc.id}`, { method: 'PUT', body: datosActualizados });
-                    cerrarModal();
-                    cargarListaDocentes();
-                }
-            });
         }
 
         function configurarBotonNuevoDocente() {
@@ -491,6 +586,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             };
+        }
+
+        function prepararEdicionDocente(doc) {
+            abrirModal({
+                titulo: 'Editar Docente',
+                textoAccion: 'Actualizar Cambios',
+                contenido: generarFormularioDocente(doc),
+                accion: async () => {
+                    const datosActualizados = capturarDatosFormulario();
+                    if (!validarDatos(datosActualizados)) return;
+
+                    await fetchAPI(`/docentes/${doc.id}`, { method: 'PUT', body: datosActualizados });
+                    cerrarModal();
+                    cargarListaDocentes();
+                }
+            });
         }
 
         // Helpers para evitar repetición de código
@@ -526,12 +637,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function validarDatos(d) {
             if (!d.nombre_completo || !d.correo || !d.identificador) {
-                // En lugar de alert, podrías insertar un mensaje en el modal actual
                 const errorMsg = document.createElement('p');
                 errorMsg.style.color = 'red';
                 errorMsg.textContent = ' Por favor, rellena los campos obligatorios (*)';
 
-                const modalCuerpo = document.querySelector('.modal-body'); // Ajusta al selector de tu modal
+                const modalCuerpo = document.querySelector('.modal-body'); 
                 if (modalCuerpo) modalCuerpo.prepend(errorMsg);
 
                 return false;
@@ -539,54 +649,129 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         }
 
-        // Inicialización
-        document.addEventListener('DOMContentLoaded', () => {
-            cargarListaDocentes();
-            configurarBusquedaDocentes();
-            configurarBotonNuevoDocente();
-        });
         // ---------------------------------------------------------
         // MÓDULO: ASIGNATURAS
         // ---------------------------------------------------------
+        let busquedaAsignaturaStr = '';
+        let timerBusquedaAsignatura;
+
+        if (!document.getElementById('estilos-acciones-tarjetas')) {
+            const style = document.createElement('style');
+            style.id = 'estilos-acciones-tarjetas';
+            style.innerHTML = `
+                .vista-asignaturas .acciones-herramientas { display: flex; gap: 1rem; align-items: center; justify-content: flex-end; flex: 1;}
+                .vista-asignaturas .contenedor-buscador { width: 300px; transition: width 0.3s ease; }
+                .vista-asignaturas .contenedor-buscador:focus-within { width: 350px; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); border-color: #2563eb; }
+                
+                .acciones-tarjeta { display: flex; gap: 0.5rem; }
+                .btn-accion-tarjeta { background: none; border: none; cursor: pointer; color: #9ca3af; transition: all 0.2s ease; padding: 0.25rem; opacity: 0; }
+                .tarjeta-asignatura:hover .btn-accion-tarjeta { opacity: 1; }
+                .btn-accion-tarjeta:hover { transform: scale(1.1); }
+                .btn-editar-tarjeta:hover { color: #2563eb; }
+                .btn-eliminar-tarjeta:hover { color: #ef4444; }
+            `;
+            document.head.appendChild(style);
+        }
+
         async function cargarListaAsignaturas() {
             try {
-                const asignaturas = await fetchAPI('/asignaturas');
+                const url = busquedaAsignaturaStr ? `/asignaturas?search=${encodeURIComponent(busquedaAsignaturaStr)}` : '/asignaturas';
+                const asignaturas = await fetchAPI(url);
+                
                 const contenedor = document.querySelector('.vista-asignaturas .grid-tarjetas');
                 if (!contenedor) return;
                 contenedor.innerHTML = '';
 
                 if (asignaturas.length === 0) {
-                    contenedor.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 2rem; color: var(--color-texto-secundario);">No hay asignaturas registradas.</div>`;
+                    contenedor.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #6b7280; background: white; border-radius: 1rem; border: 1px dashed #e5e7eb;">No se encontraron asignaturas con ese criterio.</div>`;
                     return;
                 }
 
                 asignaturas.forEach(asig => {
                     const colorFondo = `${asig.color_hex}20`;
-                    contenedor.innerHTML += `
-                        <div class="tarjeta-asignatura">
-                            <div class="cabecera-tarjeta-asignatura">
-                                <div class="icono-asignatura" style="color: ${asig.color_hex}; background-color: ${colorFondo};">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                                    </svg>
-                                </div>
-                                <div class="info-asignatura">
-                                    <h3 class="titulo-asignatura">${asig.nombre}</h3>
-                                    <div class="meta-asignatura">
-                                        <span class="etiqueta-codigo">${asig.codigo}</span>
-                                        <span class="separador-meta">•</span>
-                                        <span>${asig.area || 'Sin área'}</span>
-                                    </div>
+                    
+                    const div = document.createElement('div');
+                    div.className = 'tarjeta-asignatura';
+                    div.innerHTML = `
+                        <div class="cabecera-tarjeta-asignatura" style="align-items: flex-start;">
+                            <div class="icono-asignatura" style="color: ${asig.color_hex}; background-color: ${colorFondo};">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                                </svg>
+                            </div>
+                            <div class="info-asignatura" style="flex: 1;">
+                                <h3 class="titulo-asignatura">${asig.nombre}</h3>
+                                <div class="meta-asignatura">
+                                    <span class="etiqueta-codigo">${asig.codigo}</span>
+                                    <span class="separador-meta">•</span>
+                                    <span>${asig.area || 'Sin área'}</span>
                                 </div>
                             </div>
-                            <div class="pie-tarjeta-asignatura">
-                                <span class="texto-horas">Horas semanales</span>
-                                <span class="etiqueta-horas" style="color: ${asig.color_hex}; background-color: ${colorFondo};">${asig.horas_semanales} hrs</span>
+                            <div class="acciones-tarjeta">
+                                <button class="btn-accion-tarjeta btn-editar-tarjeta" title="Editar">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </button>
+                                <button class="btn-accion-tarjeta btn-eliminar-tarjeta" title="Eliminar">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
                             </div>
                         </div>
+                        <div class="pie-tarjeta-asignatura">
+                            <span class="texto-horas">Horas semanales</span>
+                            <span class="etiqueta-horas" style="color: ${asig.color_hex}; background-color: ${colorFondo};">${asig.horas_semanales} hrs</span>
+                        </div>
                     `;
+
+                    div.querySelector('.btn-editar-tarjeta').addEventListener('click', () => prepararEdicionAsignatura(asig));
+                    div.querySelector('.btn-eliminar-tarjeta').addEventListener('click', () => prepararEliminacionAsignatura(asig));
+
+                    contenedor.appendChild(div);
                 });
             } catch (error) { console.error(error); }
+
+            configurarBusquedaAsignaturas();
+        }
+
+        function configurarBusquedaAsignaturas() {
+            const inputBuscar = document.querySelector('.vista-asignaturas .input-buscar');
+            if (!inputBuscar) return;
+
+            inputBuscar.value = busquedaAsignaturaStr;
+
+            const nuevoInputBuscar = inputBuscar.cloneNode(true);
+            inputBuscar.parentNode.replaceChild(nuevoInputBuscar, inputBuscar);
+
+            nuevoInputBuscar.addEventListener('input', (e) => {
+                clearTimeout(timerBusquedaAsignatura);
+                timerBusquedaAsignatura = setTimeout(() => {
+                    busquedaAsignaturaStr = e.target.value.trim();
+                    cargarListaAsignaturas();
+                }, 500);
+            });
+        }
+
+        function generarFormularioAsignatura(asig = {}) {
+            return `
+                <div class="grid-2-columnas">
+                    <div class="grupo-formulario"><label class="etiqueta-formulario">Código *</label><input type="text" id="asig-codigo" class="input-estandar" placeholder="Ej. MAT-101" value="${asig.codigo || ''}"></div>
+                    <div class="grupo-formulario"><label class="etiqueta-formulario">Horas Semanales *</label><input type="number" id="asig-horas" class="input-estandar" placeholder="Ej. 4" value="${asig.horas_semanales || ''}"></div>
+                </div>
+                <div class="grupo-formulario"><label class="etiqueta-formulario">Nombre *</label><input type="text" id="asig-nombre" class="input-estandar" placeholder="Ej. Matemáticas Avanzadas" value="${asig.nombre || ''}"></div>
+                <div class="grid-2-columnas">
+                    <div class="grupo-formulario"><label class="etiqueta-formulario">Área</label><input type="text" id="asig-area" class="input-estandar" placeholder="Ej. Ciencias Exactas" value="${asig.area || ''}"></div>
+                    <div class="grupo-formulario" style="margin-bottom: 0;"><label class="etiqueta-formulario">Color</label><input type="color" id="asig-color" class="input-estandar" value="${asig.color_hex || '#2563eb'}" style="padding: 0.25rem; height: 42px;"></div>
+                </div>
+            `;
+        }
+
+        function capturarDatosAsignatura() {
+            return {
+                codigo: document.getElementById('asig-codigo').value,
+                horas_semanales: document.getElementById('asig-horas').value,
+                nombre: document.getElementById('asig-nombre').value,
+                area: document.getElementById('asig-area').value,
+                color_hex: document.getElementById('asig-color').value
+            };
         }
 
         function configurarBotonNuevaAsignatura() {
@@ -597,30 +782,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirModal({
                     titulo: 'Agregar Nueva Asignatura',
                     textoAccion: 'Guardar Asignatura',
-                    contenido: `
-                        <div class="grid-2-columnas">
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Código *</label><input type="text" id="asig-codigo" class="input-estandar" placeholder="Ej. MAT-101"></div>
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Horas Semanales *</label><input type="number" id="asig-horas" class="input-estandar" placeholder="Ej. 4"></div>
-                        </div>
-                        <div class="grupo-formulario"><label class="etiqueta-formulario">Nombre *</label><input type="text" id="asig-nombre" class="input-estandar" placeholder="Ej. Matemáticas Avanzadas"></div>
-                        <div class="grid-2-columnas">
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Área</label><input type="text" id="asig-area" class="input-estandar" placeholder="Ej. Ciencias Exactas"></div>
-                            <div class="grupo-formulario" style="margin-bottom: 0;"><label class="etiqueta-formulario">Color</label><input type="color" id="asig-color" class="input-estandar" value="#8b5cf6" style="padding: 0.25rem; height: 42px;"></div>
-                        </div>
-                    `,
+                    contenido: generarFormularioAsignatura(),
                     accion: async () => {
-                        const nuevaAsig = {
-                            codigo: document.getElementById('asig-codigo').value,
-                            horas_semanales: document.getElementById('asig-horas').value,
-                            nombre: document.getElementById('asig-nombre').value,
-                            area: document.getElementById('asig-area').value,
-                            color_hex: document.getElementById('asig-color').value
-                        };
-
+                        const nuevaAsig = capturarDatosAsignatura();
                         if (!nuevaAsig.codigo || !nuevaAsig.nombre || !nuevaAsig.horas_semanales) {
                             return window.abrirModal({ titulo: 'Faltan Datos', contenido: 'Llena los campos obligatorios.', ocultarCancelar: true });
                         }
-
                         await fetchAPI('/asignaturas', { method: 'POST', body: nuevaAsig });
                         cerrarModal();
                         cargarListaAsignaturas();
@@ -629,18 +796,89 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        function prepararEdicionAsignatura(asig) {
+            abrirModal({
+                titulo: 'Editar Asignatura',
+                textoAccion: 'Actualizar Cambios',
+                contenido: generarFormularioAsignatura(asig),
+                accion: async () => {
+                    const datos = capturarDatosAsignatura();
+                    if (!datos.codigo || !datos.nombre || !datos.horas_semanales) {
+                        return window.abrirModal({ titulo: 'Faltan Datos', contenido: 'Llena los campos obligatorios.', ocultarCancelar: true });
+                    }
+                    await fetchAPI(`/asignaturas/${asig.id}`, { method: 'PUT', body: datos });
+                    cerrarModal();
+                    cargarListaAsignaturas();
+                }
+            });
+        }
+
+        function prepararEliminacionAsignatura(asig) {
+            window.abrirModal({
+                titulo: 'Eliminar Asignatura',
+                textoAccion: 'Sí, Eliminar',
+                contenido: `
+                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1.5rem 1rem 0.5rem 1rem;">
+                        <div style="background-color: #fee2e2; border-radius: 50%; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="8" y1="2" x2="8" y2="22"></line>
+                            </svg>
+                        </div>
+                        <p style="font-size: 1.15rem; color: #374151; margin-bottom: 0.75rem;">
+                            ¿Deseas eliminar la asignatura <strong>${asig.nombre}</strong>?
+                        </p>
+                        <p style="color: #ef4444; font-size: 0.95rem; font-weight: 500; margin: 0;">
+                            Esto borrará la materia del plan de estudios y sus horarios.
+                        </p>
+                    </div>
+                `,
+                accion: async () => {
+                    const btnAccion = document.getElementById('boton-accion-modal');
+                    if(btnAccion) { btnAccion.disabled = true; btnAccion.textContent = 'Eliminando...'; btnAccion.style.opacity = '0.7'; }
+                    try {
+                        await fetchAPI(`/asignaturas/${asig.id}`, { method: 'DELETE' });
+                        window.cerrarModal();
+                        cargarListaAsignaturas(); 
+                    } catch (error) {
+                        if(btnAccion) { btnAccion.disabled = false; btnAccion.textContent = 'Sí, Eliminar'; btnAccion.style.opacity = '1'; }
+                    }
+                }
+            });
+        }
+
         // ---------------------------------------------------------
         // MÓDULO: GRUPOS
         // ---------------------------------------------------------
+        let busquedaGrupoStr = '';
+        let timerBusquedaGrupo;
+
+        // Inyectamos el CSS para que los botones solo aparezcan al pasar el mouse por la fila (Hover)
+        if (!document.getElementById('estilos-acciones-grupos')) {
+            const style = document.createElement('style');
+            style.id = 'estilos-acciones-grupos';
+            style.innerHTML = `
+                .acciones-fila { display: flex; gap: 0.5rem; opacity: 0; transition: opacity 0.2s ease; justify-content: flex-start; }
+                .tabla-datos tbody tr:hover .acciones-fila { opacity: 1; }
+                
+                /* Estilos para el buscador de grupos */
+                .vista-grupos .acciones-herramientas { display: flex; gap: 1rem; align-items: center; justify-content: flex-end; flex: 1;}
+                .vista-grupos .contenedor-buscador { width: 300px; transition: width 0.3s ease; }
+                .vista-grupos .contenedor-buscador:focus-within { width: 350px; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); border-color: #2563eb; }
+            `;
+            document.head.appendChild(style);
+        }
+
         async function cargarListaGrupos() {
             try {
-                const grupos = await fetchAPI('/grupos');
+                const url = busquedaGrupoStr ? `/grupos?search=${encodeURIComponent(busquedaGrupoStr)}` : '/grupos';
+                const grupos = await fetchAPI(url);
+                
                 const tbody = document.querySelector('.vista-grupos .tabla-datos tbody');
                 if (!tbody) return;
                 tbody.innerHTML = '';
 
                 if (grupos.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 2rem;">No hay grupos registrados.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 3rem; color: #6b7280;">No se encontraron grupos con ese criterio.</td></tr>`;
                     return;
                 }
 
@@ -649,30 +887,94 @@ document.addEventListener('DOMContentLoaded', () => {
                         ? `<svg class="icono-turno-matutino" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`
                         : `<svg class="icono-turno-vespertino" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>
-                                <div class="perfil-celda">
-                                    <div class="badge-grupo">${grp.identificador}</div>
-                                    <div class="info-texto">
-                                        <span class="texto-principal">${grp.nombre}</span>
-                                        <span class="texto-menor">ID: GRP-${grp.id}</span>
-                                    </div>
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="perfil-celda">
+                                <div class="badge-grupo">${grp.identificador}</div>
+                                <div class="info-texto">
+                                    <span class="texto-principal">${grp.nombre}</span>
+                                    <span class="texto-menor">ID: GRP-${grp.id}</span>
                                 </div>
-                            </td>
-                            <td><span class="celda-texto-simple">${grp.grado}</span></td>
-                            <td><div class="item-icono-texto">${iconoTurno}<span>${grp.turno}</span></div></td>
-                            <td>
-                                <div class="item-icono-texto">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                    <span>${grp.capacidad} alumnos</span>
-                                </div>
-                            </td>
-                            <td></td>
-                        </tr>
+                            </div>
+                        </td>
+                        <td><span class="celda-texto-simple">${grp.grado}</span></td>
+                        <td><div class="item-icono-texto">${iconoTurno}<span>${grp.turno}</span></div></td>
+                        <td>
+                            <div class="item-icono-texto">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                <span>${grp.capacidad} alumnos</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="acciones-fila">
+                                <button class="btn-accion-tabla btn-editar" title="Editar">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </button>
+                                <button class="btn-accion-tabla btn-eliminar" title="Eliminar">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </div>
+                        </td>
                     `;
+                    
+                    tr.querySelector('.btn-editar').addEventListener('click', () => prepararEdicionGrupo(grp));
+                    tr.querySelector('.btn-eliminar').addEventListener('click', () => prepararEliminacionGrupo(grp));
+
+                    tbody.appendChild(tr);
                 });
             } catch (error) { console.error(error); }
+
+            configurarBusquedaGrupos();
+        }
+
+        function configurarBusquedaGrupos() {
+            const inputBuscar = document.querySelector('.vista-grupos .input-buscar');
+            if (!inputBuscar) return;
+
+            inputBuscar.value = busquedaGrupoStr;
+
+            const nuevoInputBuscar = inputBuscar.cloneNode(true);
+            inputBuscar.parentNode.replaceChild(nuevoInputBuscar, inputBuscar);
+
+            nuevoInputBuscar.addEventListener('input', (e) => {
+                clearTimeout(timerBusquedaGrupo);
+                timerBusquedaGrupo = setTimeout(() => {
+                    busquedaGrupoStr = e.target.value.trim();
+                    cargarListaGrupos();
+                }, 500);
+            });
+        }
+
+        // Helpers de Formularios
+        function generarFormularioGrupo(grp = {}) {
+            return `
+                <div class="grid-2-columnas">
+                    <div class="grupo-formulario"><label class="etiqueta-formulario">Identificador (Ej. 1A) *</label><input type="text" id="grp-id" class="input-estandar" placeholder="1A" value="${grp.identificador || ''}"></div>
+                    <div class="grupo-formulario"><label class="etiqueta-formulario">Nombre Oficial *</label><input type="text" id="grp-nombre" class="input-estandar" placeholder="Grupo 1A" value="${grp.nombre || ''}"></div>
+                </div>
+                <div class="grid-2-columnas">
+                    <div class="grupo-formulario"><label class="etiqueta-formulario">Grado *</label><input type="text" id="grp-grado" class="input-estandar" placeholder="1er Semestre" value="${grp.grado || ''}"></div>
+                    <div class="grupo-formulario"><label class="etiqueta-formulario">Capacidad *</label><input type="number" id="grp-capacidad" class="input-estandar" placeholder="35" value="${grp.capacidad || ''}"></div>
+                </div>
+                <div class="grupo-formulario" style="margin-bottom: 0;">
+                    <label class="etiqueta-formulario">Turno *</label>
+                    <select id="grp-turno" class="input-estandar">
+                        <option value="Matutino" ${grp.turno === 'Matutino' ? 'selected' : ''}>Matutino</option>
+                        <option value="Vespertino" ${grp.turno === 'Vespertino' ? 'selected' : ''}>Vespertino</option>
+                    </select>
+                </div>
+            `;
+        }
+
+        function capturarDatosGrupo() {
+            return {
+                identificador: document.getElementById('grp-id').value,
+                nombre: document.getElementById('grp-nombre').value,
+                grado: document.getElementById('grp-grado').value,
+                capacidad: document.getElementById('grp-capacidad').value,
+                turno: document.getElementById('grp-turno').value
+            };
         }
 
         function configurarBotonNuevoGrupo() {
@@ -683,41 +985,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 abrirModal({
                     titulo: 'Agregar Nuevo Grupo',
                     textoAccion: 'Guardar Grupo',
-                    contenido: `
-                        <div class="grid-2-columnas">
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Identificador (Ej. 1A) *</label><input type="text" id="grp-id" class="input-estandar" placeholder="1A"></div>
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Nombre Oficial *</label><input type="text" id="grp-nombre" class="input-estandar" placeholder="Grupo 1A"></div>
-                        </div>
-                        <div class="grid-2-columnas">
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Grado *</label><input type="text" id="grp-grado" class="input-estandar" placeholder="1er Semestre"></div>
-                            <div class="grupo-formulario"><label class="etiqueta-formulario">Capacidad *</label><input type="number" id="grp-capacidad" class="input-estandar" placeholder="35"></div>
-                        </div>
-                        <div class="grupo-formulario" style="margin-bottom: 0;">
-                            <label class="etiqueta-formulario">Turno *</label>
-                            <select id="grp-turno" class="input-estandar">
-                                <option value="Matutino">Matutino</option>
-                                <option value="Vespertino">Vespertino</option>
-                            </select>
-                        </div>
-                    `,
+                    contenido: generarFormularioGrupo(),
                     accion: async () => {
-                        const nuevoGrp = {
-                            identificador: document.getElementById('grp-id').value,
-                            nombre: document.getElementById('grp-nombre').value,
-                            grado: document.getElementById('grp-grado').value,
-                            capacidad: document.getElementById('grp-capacidad').value,
-                            turno: document.getElementById('grp-turno').value
-                        };
-
+                        const nuevoGrp = capturarDatosGrupo();
                         if (!nuevoGrp.identificador || !nuevoGrp.nombre || !nuevoGrp.grado || !nuevoGrp.capacidad) {
                             return window.abrirModal({ titulo: 'Faltan Datos', contenido: 'Llena los campos obligatorios.', ocultarCancelar: true });
                         }
-
                         await fetchAPI('/grupos', { method: 'POST', body: nuevoGrp });
                         cerrarModal();
                         cargarListaGrupos();
                     }
                 });
+            });
+        }
+
+        function prepararEdicionGrupo(grp) {
+            abrirModal({
+                titulo: 'Editar Grupo',
+                textoAccion: 'Actualizar Cambios',
+                contenido: generarFormularioGrupo(grp),
+                accion: async () => {
+                    const datos = capturarDatosGrupo();
+                    if (!datos.identificador || !datos.nombre || !datos.grado || !datos.capacidad) {
+                        return window.abrirModal({ titulo: 'Faltan Datos', contenido: 'Llena los campos obligatorios.', ocultarCancelar: true });
+                    }
+                    await fetchAPI(`/grupos/${grp.id}`, { method: 'PUT', body: datos });
+                    cerrarModal();
+                    cargarListaGrupos();
+                }
+            });
+        }
+
+        function prepararEliminacionGrupo(grp) {
+            window.abrirModal({
+                titulo: 'Eliminar Grupo',
+                textoAccion: 'Sí, Eliminar',
+                contenido: `
+                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1.5rem 1rem 0.5rem 1rem;">
+                        <div style="background-color: #fee2e2; border-radius: 50%; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <p style="font-size: 1.15rem; color: #374151; margin-bottom: 0.75rem;">
+                            ¿Estás seguro de que deseas eliminar el grupo <strong>${grp.nombre}</strong>?
+                        </p>
+                        <p style="color: #ef4444; font-size: 0.95rem; font-weight: 500; margin: 0;">
+                            Esta acción borrará todas sus materias y horarios asociados.
+                        </p>
+                    </div>
+                `,
+                accion: async () => {
+                    const btnAccion = document.getElementById('boton-accion-modal');
+                    if(btnAccion) { btnAccion.disabled = true; btnAccion.textContent = 'Eliminando...'; btnAccion.style.opacity = '0.7'; }
+                    try {
+                        await fetchAPI(`/grupos/${grp.id}`, { method: 'DELETE' });
+                        window.cerrarModal();
+                        cargarListaGrupos(); 
+                    } catch (error) {
+                        if(btnAccion) { btnAccion.disabled = false; btnAccion.textContent = 'Sí, Eliminar'; btnAccion.style.opacity = '1'; }
+                    }
+                }
             });
         }
 
@@ -763,13 +1091,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                             <div class="acciones-periodo">
-                                <button class="boton-base boton-secundario">Editar</button>
+                                <button class="boton-base boton-secundario btn-editar-periodo" data-id="${per.id}">Editar</button>
                                 ${btnActivar}
                             </div>
                         </div>
                     `;
                 });
 
+                // Eventos para Activar
                 document.querySelectorAll('.btn-activar-periodo').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         const id = e.target.getAttribute('data-id');
@@ -778,7 +1107,102 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
 
+                // Eventos para Editar
+                document.querySelectorAll('.btn-editar-periodo').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        const periodoEncontrado = periodos.find(p => p.id == id);
+                        prepararEdicionPeriodo(periodoEncontrado);
+                    });
+                });
+
             } catch (error) { console.error(error); }
+        }
+
+        // Función para abrir el Modal de Edición de Periodo
+        function prepararEdicionPeriodo(per) {
+            window.abrirModal({
+                titulo: 'Editar Periodo',
+                textoAccion: 'Guardar Cambios',
+                contenido: `
+                    <div class="grupo-formulario">
+                        <label class="etiqueta-formulario">Nombre del Periodo *</label>
+                        <input type="text" id="edit-per-nombre" class="input-estandar" value="${per.nombre}">
+                    </div>
+                    <div class="grid-2-columnas">
+                        <div class="grupo-formulario">
+                            <label class="etiqueta-formulario">Fecha de Inicio *</label>
+                            <input type="date" id="edit-per-inicio" class="input-estandar" value="${per.fecha_inicio}">
+                        </div>
+                        <div class="grupo-formulario" style="margin-bottom: 0;">
+                            <label class="etiqueta-formulario">Fecha de Fin *</label>
+                            <input type="date" id="edit-per-fin" class="input-estandar" value="${per.fecha_fin}">
+                        </div>
+                    </div>
+                `,
+                accion: async () => {
+                    const datos = {
+                        nombre: document.getElementById('edit-per-nombre').value,
+                        fecha_inicio: document.getElementById('edit-per-inicio').value,
+                        fecha_fin: document.getElementById('edit-per-fin').value
+                    };
+
+                    if (!datos.nombre || !datos.fecha_inicio || !datos.fecha_fin) {
+                        return window.abrirModal({ titulo: 'Faltan Datos', contenido: 'Llena los campos obligatorios.', ocultarCancelar: true });
+                    }
+
+                    await fetchAPI(`/periodos/${per.id}`, { method: 'PUT', body: datos });
+                    window.cerrarModal();
+                    cargarListaPeriodos();
+                }
+            });
+        }
+
+        function configurarFormularioNuevoPeriodo() {
+            const formularioOriginal = document.getElementById('formulario-periodo');
+            if (!formularioOriginal) return;
+
+            // Truco UX: Cambiamos los inputs de texto a inputs tipo calendario
+            const inputInicio = document.getElementById('fecha-inicio');
+            const inputFin = document.getElementById('fecha-fin');
+            if(inputInicio) inputInicio.type = 'date';
+            if(inputFin) inputFin.type = 'date';
+
+            // Clonamos para evitar que se dupliquen eventos al cambiar de pestañas
+            const formulario = formularioOriginal.cloneNode(true);
+            formularioOriginal.parentNode.replaceChild(formulario, formularioOriginal);
+
+            formulario.addEventListener('submit', async (evento) => {
+                evento.preventDefault();
+
+                const nuevoPeriodo = {
+                    nombre: document.getElementById('nombre-periodo').value,
+                    fecha_inicio: document.getElementById('fecha-inicio').value,
+                    fecha_fin: document.getElementById('fecha-fin').value
+                };
+
+                try {
+                    await fetchAPI('/periodos', { method: 'POST', body: nuevoPeriodo });
+                    formulario.reset();
+                    cargarListaPeriodos();
+                    
+                    window.abrirModal({
+                        titulo: 'Éxito',
+                        contenido: `
+                            <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1rem;">
+                                <div style="background-color: #d1fae5; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                </div>
+                                <p style="font-size: 1.1rem; color: #374151; margin: 0;">Periodo guardado correctamente.</p>
+                            </div>
+                        `,
+                        ocultarCancelar: true,
+                        textoAccion: 'Entendido'
+                    });
+                } catch (error) { console.error(error); }
+            });
         }
 
         function configurarFormularioNuevoPeriodo() {

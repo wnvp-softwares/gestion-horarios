@@ -2,7 +2,7 @@ const { Periodo } = require('../../models');
 
 const obtenerPeriodos = async (req, res) => {
     try {
-        const periodos = await Periodo.findAll();
+        const periodos = await Periodo.findAll({ order: [['id', 'DESC']] });
         res.json(periodos);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -29,4 +29,14 @@ const activarPeriodo = async (req, res) => {
     }
 };
 
-module.exports = { obtenerPeriodos, crearPeriodo, activarPeriodo };
+const actualizarPeriodo = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Periodo.update(req.body, { where: { id } });
+        res.json({ mensaje: 'Periodo actualizado correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { obtenerPeriodos, crearPeriodo, activarPeriodo, actualizarPeriodo };

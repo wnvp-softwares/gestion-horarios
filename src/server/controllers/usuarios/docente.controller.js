@@ -1,22 +1,20 @@
 const { Docente } = require('../../models');
-const { Op } = require('sequelize');
 
 const obtenerDocentes = async (req, res) => {
     try {
-        const { search = '', page = 1, limit = 6 } = req.query;
+        const { page = 1, limit = 6, search = '' } = req.query;
+        
+        const condicion = search ? {
+            nombre_completo: { [require('sequelize').Op.like]: `%${search}%` }
+        } : {};
+
         const offset = (page - 1) * limit;
 
         const { count, rows } = await Docente.findAndCountAll({
-            where: {
-                [Op.or]: [
-                    { nombre_completo: { [Op.like]: `%${search}%` } },
-                    { identificador: { [Op.like]: `%${search}%` } },
-                    { especialidad: { [Op.like]: `%${search}%` } }
-                ]
-            },
+            where: condicion,
             limit: parseInt(limit),
             offset: parseInt(offset),
-            order: [['creado_en', 'DESC']]
+            order: [['id', 'DESC']]
         });
 
         res.json({
@@ -49,4 +47,14 @@ const actualizarDocente = async (req, res) => {
     }
 };
 
-module.exports = { obtenerDocentes, crearDocente, actualizarDocente };
+const eliminarDocente = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await Docente.destroy({ where: { id } });
+        res.json({ mensaje: 'Docente eliminado correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { obtenerDocentes, crearDocente, actualizarDocente, eliminarDocente };
