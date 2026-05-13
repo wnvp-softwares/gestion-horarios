@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const respuesta = await fetch(url, config);
-            
+
             const contentType = respuesta.headers.get("content-type");
             let datos = {};
 
@@ -61,17 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!respuesta.ok) throw new Error(datos.error || 'Error en la petición');
             return datos;
-            
+
         } catch (error) {
             console.error(`Error en API (${endpoint}):`, error);
-            window.abrirModal({
-                titulo: 'Error de Conexión',
-                contenido: `<div style="padding: 1rem; border-left: 4px solid #ef4444; background-color: #fee2e2; border-radius: 4px; color: #b91c1c;">
-                                <strong>Detalle del error:</strong><br>${error.message}
-                            </div>`,
-                ocultarCancelar: true,
-                textoAccion: 'Entendido'
-            });
+            // 👇 Solo abrimos el modal si no nos pidieron ocultarlo 👇
+            if (opciones.mostrarModalError !== false) {
+                window.abrirModal({
+                    titulo: 'Error de Conexión',
+                    contenido: `<div style="padding: 1rem; border-left: 4px solid #ef4444; background-color: #fee2e2; border-radius: 4px; color: #b91c1c;">
+                                    <strong>Detalle del error:</strong><br>${error.message}
+                                </div>`,
+                    ocultarCancelar: true,
+                    textoAccion: 'Entendido'
+                });
+            }
             throw error;
         }
     }
@@ -138,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         botonCancelarModal.style.display = opciones.ocultarCancelar ? 'none' : 'inline-flex';
 
         const nuevoBotonAccion = botonAccionModal.cloneNode(true);
-        nuevoBotonAccion.disabled = false; 
+        nuevoBotonAccion.disabled = false;
         nuevoBotonAccion.style.opacity = '1';
         botonAccionModal.parentNode.replaceChild(nuevoBotonAccion, botonAccionModal);
 
@@ -257,6 +260,8 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (idRuta === 'nav-asignaturas') { cargarListaAsignaturas(); configurarBotonNuevaAsignatura(); }
             else if (idRuta === 'nav-grupos') { cargarListaGrupos(); configurarBotonNuevoGrupo(); }
             else if (idRuta === 'nav-periodos') { cargarListaPeriodos(); configurarFormularioNuevoPeriodo(); }
+            else if (idRuta === 'nav-disponibilidad') { inicializarModuloDisponibilidad(); }
+            else if (idRuta === 'nav-generacion') { inicializarModuloGenerador(); }
         }
 
         // ---------------------------------------------------------
@@ -378,7 +383,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.docentes.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 2rem;">No se encontraron docentes.</td></tr>`;
-                    actualizarPaginacion(0, 0); 
+                    actualizarPaginacion(0, 0);
                     return;
                 }
 
@@ -447,8 +452,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     timerBusquedaDocentes = setTimeout(() => {
                         estadoDocentes.busqueda = e.target.value.trim();
-                        estadoDocentes.paginaActual = 1; 
-                        cargarListaDocentes(); 
+                        estadoDocentes.paginaActual = 1;
+                        cargarListaDocentes();
                     }, 500);
                 });
             }
@@ -495,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 `,
                 accion: async () => {
                     const btnAccion = document.getElementById('boton-accion-modal');
-                    if(btnAccion) {
+                    if (btnAccion) {
                         btnAccion.disabled = true;
                         btnAccion.textContent = 'Eliminando...';
                         btnAccion.style.opacity = '0.7';
@@ -503,9 +508,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     try {
                         await fetchAPI(`/docentes/${doc.id}`, { method: 'DELETE' });
-                        
+
                         window.cerrarModal();
-                        cargarListaDocentes(); 
+                        cargarListaDocentes();
                         setTimeout(() => {
                             window.abrirModal({
                                 titulo: 'Éxito',
@@ -522,10 +527,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ocultarCancelar: true,
                                 textoAccion: 'Entendido'
                             });
-                        }, 400); 
+                        }, 400);
                     } catch (error) {
                         console.error('Error al borrar:', error);
-                        if(btnAccion) {
+                        if (btnAccion) {
                             btnAccion.disabled = false;
                             btnAccion.textContent = 'Sí, Eliminar';
                             btnAccion.style.opacity = '1';
@@ -641,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorMsg.style.color = 'red';
                 errorMsg.textContent = ' Por favor, rellena los campos obligatorios (*)';
 
-                const modalCuerpo = document.querySelector('.modal-body'); 
+                const modalCuerpo = document.querySelector('.modal-body');
                 if (modalCuerpo) modalCuerpo.prepend(errorMsg);
 
                 return false;
@@ -677,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const url = busquedaAsignaturaStr ? `/asignaturas?search=${encodeURIComponent(busquedaAsignaturaStr)}` : '/asignaturas';
                 const asignaturas = await fetchAPI(url);
-                
+
                 const contenedor = document.querySelector('.vista-asignaturas .grid-tarjetas');
                 if (!contenedor) return;
                 contenedor.innerHTML = '';
@@ -689,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 asignaturas.forEach(asig => {
                     const colorFondo = `${asig.color_hex}20`;
-                    
+
                     const div = document.createElement('div');
                     div.className = 'tarjeta-asignatura';
                     div.innerHTML = `
@@ -834,13 +839,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 `,
                 accion: async () => {
                     const btnAccion = document.getElementById('boton-accion-modal');
-                    if(btnAccion) { btnAccion.disabled = true; btnAccion.textContent = 'Eliminando...'; btnAccion.style.opacity = '0.7'; }
+                    if (btnAccion) { btnAccion.disabled = true; btnAccion.textContent = 'Eliminando...'; btnAccion.style.opacity = '0.7'; }
                     try {
                         await fetchAPI(`/asignaturas/${asig.id}`, { method: 'DELETE' });
                         window.cerrarModal();
-                        cargarListaAsignaturas(); 
+                        cargarListaAsignaturas();
                     } catch (error) {
-                        if(btnAccion) { btnAccion.disabled = false; btnAccion.textContent = 'Sí, Eliminar'; btnAccion.style.opacity = '1'; }
+                        if (btnAccion) { btnAccion.disabled = false; btnAccion.textContent = 'Sí, Eliminar'; btnAccion.style.opacity = '1'; }
                     }
                 }
             });
@@ -872,7 +877,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const url = busquedaGrupoStr ? `/grupos?search=${encodeURIComponent(busquedaGrupoStr)}` : '/grupos';
                 const grupos = await fetchAPI(url);
-                
+
                 const tbody = document.querySelector('.vista-grupos .tabla-datos tbody');
                 if (!tbody) return;
                 tbody.innerHTML = '';
@@ -917,7 +922,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </td>
                     `;
-                    
+
                     tr.querySelector('.btn-editar').addEventListener('click', () => prepararEdicionGrupo(grp));
                     tr.querySelector('.btn-eliminar').addEventListener('click', () => prepararEliminacionGrupo(grp));
 
@@ -1037,13 +1042,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 `,
                 accion: async () => {
                     const btnAccion = document.getElementById('boton-accion-modal');
-                    if(btnAccion) { btnAccion.disabled = true; btnAccion.textContent = 'Eliminando...'; btnAccion.style.opacity = '0.7'; }
+                    if (btnAccion) { btnAccion.disabled = true; btnAccion.textContent = 'Eliminando...'; btnAccion.style.opacity = '0.7'; }
                     try {
                         await fetchAPI(`/grupos/${grp.id}`, { method: 'DELETE' });
                         window.cerrarModal();
-                        cargarListaGrupos(); 
+                        cargarListaGrupos();
                     } catch (error) {
-                        if(btnAccion) { btnAccion.disabled = false; btnAccion.textContent = 'Sí, Eliminar'; btnAccion.style.opacity = '1'; }
+                        if (btnAccion) { btnAccion.disabled = false; btnAccion.textContent = 'Sí, Eliminar'; btnAccion.style.opacity = '1'; }
                     }
                 }
             });
@@ -1165,8 +1170,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Truco UX: Cambiamos los inputs de texto a inputs tipo calendario
             const inputInicio = document.getElementById('fecha-inicio');
             const inputFin = document.getElementById('fecha-fin');
-            if(inputInicio) inputInicio.type = 'date';
-            if(inputFin) inputFin.type = 'date';
+            if (inputInicio) inputInicio.type = 'date';
+            if (inputFin) inputFin.type = 'date';
 
             // Clonamos para evitar que se dupliquen eventos al cambiar de pestañas
             const formulario = formularioOriginal.cloneNode(true);
@@ -1185,7 +1190,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await fetchAPI('/periodos', { method: 'POST', body: nuevoPeriodo });
                     formulario.reset();
                     cargarListaPeriodos();
-                    
+
                     window.abrirModal({
                         titulo: 'Éxito',
                         contenido: `
@@ -1225,5 +1230,457 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) { console.error(error); }
             });
         }
+
+        // ---------------------------------------------------------
+        // MÓDULO: DISPONIBILIDAD DE DOCENTES
+        // ---------------------------------------------------------
+        const configuracionHorarios = [
+            { inicio: '07:00:00', fin: '08:30:00', etiqueta: '07:00 - 08:30', tipo: 'clase' },
+            { inicio: '08:30:00', fin: '10:00:00', etiqueta: '08:30 - 10:00', tipo: 'clase' },
+            { inicio: '10:00:00', fin: '10:30:00', etiqueta: '10:00 - 10:30', tipo: 'receso' },
+            { inicio: '10:30:00', fin: '12:00:00', etiqueta: '10:30 - 12:00', tipo: 'clase' },
+            { inicio: '12:00:00', fin: '13:30:00', etiqueta: '12:00 - 13:30', tipo: 'clase' },
+            { inicio: '13:30:00', fin: '15:00:00', etiqueta: '13:30 - 15:00', tipo: 'clase' }
+        ];
+        const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+        async function inicializarModuloDisponibilidad() {
+            dibujarCuadriculaVacia();
+
+            const selector = document.getElementById('selector-docente-disponibilidad');
+            const btnGuardar = document.getElementById('btn-guardar-disponibilidad');
+            if (!selector || !btnGuardar) return;
+
+            // 1. Cargar la lista de docentes en el select
+            try {
+                const data = await fetchAPI('/docentes?limit=100'); // Traemos todos para el selector
+                selector.innerHTML = '<option value="">-- Selecciona un docente --</option>';
+
+                data.docentes.forEach(doc => {
+                    if (doc.es_activo) { // Solo mostrar docentes activos
+                        const opcion = document.createElement('option');
+                        opcion.value = doc.id;
+                        opcion.textContent = `${doc.prefijo || ''} ${doc.nombre_completo} (${doc.identificador})`;
+                        selector.appendChild(opcion);
+                    }
+                });
+            } catch (error) {
+                console.error("Error al cargar docentes para disponibilidad", error);
+            }
+
+            // 2. Al cambiar de maestro, cargar sus horarios
+            selector.addEventListener('change', async (e) => {
+                const docenteId = e.target.value;
+                if (!docenteId) {
+                    dibujarCuadriculaVacia(); // Limpiar si selecciona la opción vacía
+                    btnGuardar.disabled = true;
+                    return;
+                }
+
+                btnGuardar.disabled = false;
+                await cargarDisponibilidadDeBaseDeDatos(docenteId);
+            });
+
+            // 3. Botón de guardar
+            btnGuardar.onclick = guardarDisponibilidadActual;
+        }
+
+        function dibujarCuadriculaVacia() {
+            const tbody = document.getElementById('cuerpo-tabla-disponibilidad');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            configuracionHorarios.forEach(hora => {
+                const tr = document.createElement('tr');
+
+                // Columna de la hora
+                let htmlFila = `
+                    <td>
+                        <div class="celda-tiempo">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            ${hora.etiqueta}
+                        </div>
+                    </td>
+                `;
+
+                // Si es receso, pintar la fila completa gris
+                if (hora.tipo === 'receso') {
+                    for (let i = 0; i < 5; i++) {
+                        htmlFila += `<td><div class="celda-interactiva estado-celda-receso">RECESO</div></td>`;
+                    }
+                    tr.innerHTML = htmlFila;
+                } else {
+                    // Celdas normales clickeables
+                    diasSemana.forEach(dia => {
+                        htmlFila += `
+                            <td>
+                                <div class="celda-interactiva" 
+                                     data-dia="${dia}" 
+                                     data-inicio="${hora.inicio}" 
+                                     data-fin="${hora.fin}" 
+                                     data-estado="vacio">
+                                </div>
+                            </td>
+                        `;
+                    });
+                    tr.innerHTML = htmlFila;
+
+                    // Asignar el evento de clic a las nuevas celdas
+                    tr.querySelectorAll('.celda-interactiva').forEach(celda => {
+                        celda.addEventListener('click', manejarClicCelda);
+                    });
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        function manejarClicCelda(evento) {
+            // Ciclo de estados: vacio -> disponible -> preferencia -> vacio
+            const celda = evento.currentTarget;
+            const estadoActual = celda.getAttribute('data-estado');
+
+            if (estadoActual === 'vacio') {
+                celda.setAttribute('data-estado', 'disponible');
+                celda.className = 'celda-interactiva estado-celda-disponible';
+                celda.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            }
+            else if (estadoActual === 'disponible') {
+                celda.setAttribute('data-estado', 'preferencia');
+                celda.className = 'celda-interactiva estado-celda-preferencia';
+                celda.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+            }
+            else {
+                celda.setAttribute('data-estado', 'vacio');
+                celda.className = 'celda-interactiva';
+                celda.innerHTML = '';
+            }
+        }
+
+        async function cargarDisponibilidadDeBaseDeDatos(docenteId) {
+            dibujarCuadriculaVacia(); // Reiniciamos el lienzo
+            try {
+                const disponibilidades = await fetchAPI(`/disponibilidad/${docenteId}`);
+
+                // Buscar las celdas correspondientes y pintarlas
+                disponibilidades.forEach(disp => {
+                    const celda = document.querySelector(`.celda-interactiva[data-dia="${disp.dia_semana}"][data-inicio="${disp.hora_inicio}"]`);
+                    if (celda) {
+                        celda.setAttribute('data-estado', disp.tipo_estado);
+                        if (disp.tipo_estado === 'disponible') {
+                            celda.className = 'celda-interactiva estado-celda-disponible';
+                            celda.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                        } else if (disp.tipo_estado === 'preferencia') {
+                            celda.className = 'celda-interactiva estado-celda-preferencia';
+                            celda.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Error al cargar la disponibilidad:", error);
+            }
+        }
+
+        async function guardarDisponibilidadActual() {
+            const docenteId = document.getElementById('selector-docente-disponibilidad').value;
+            if (!docenteId) return;
+
+            const celdas = document.querySelectorAll('.celda-interactiva[data-estado="disponible"], .celda-interactiva[data-estado="preferencia"]');
+
+            const horarios = Array.from(celdas).map(celda => ({
+                docente_id: docenteId,
+                dia_semana: celda.getAttribute('data-dia'),
+                hora_inicio: celda.getAttribute('data-inicio'),
+                hora_fin: celda.getAttribute('data-fin'),
+                tipo_estado: celda.getAttribute('data-estado')
+            }));
+
+            try {
+                const btnGuardar = document.getElementById('btn-guardar-disponibilidad');
+                btnGuardar.disabled = true;
+                btnGuardar.textContent = 'Guardando...';
+
+                await fetchAPI('/disponibilidad', {
+                    method: 'POST',
+                    body: { docente_id: docenteId, horarios }
+                });
+
+                window.abrirModal({
+                    titulo: 'Éxito',
+                    contenido: `
+                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 1.5rem 1rem 0.5rem 1rem;">
+                            <div style="background-color: #d1fae5; border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem;">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
+                            <p style="font-size: 1.1rem; color: #374151; margin: 0;">Disponibilidad guardada correctamente.</p>
+                        </div>
+                    `,
+                    ocultarCancelar: true,
+                    textoAccion: 'Entendido'
+                });
+
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>Guardar Cambios`;
+
+            } catch (error) {
+                console.error("Error al guardar disponibilidad:", error);
+            }
+        }
+
     }
-});
+
+    // ---------------------------------------------------------
+    // MÓDULO: GENERACIÓN DE HORARIOS (TABLERO)
+    // ---------------------------------------------------------
+    // ---------------------------------------------------------
+    // MÓDULO: GENERACIÓN DE HORARIOS (TABLERO)
+    // ---------------------------------------------------------
+    if (!document.getElementById('estilos-tablero')) {
+        const style = document.createElement('style');
+        style.id = 'estilos-tablero';
+        style.innerHTML = `
+                /* 1. Recuperar el diseño de las Pestañas y Filtros Superiores */
+                .controles-generador { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 1rem; }
+                .filtros-generador { display: flex; align-items: center; gap: 0.75rem; }
+                .pestana { padding: 0.5rem 1rem; border: none; background: transparent; font-weight: 600; color: #6b7280; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; font-size: 0.95rem; }
+                .pestana.activa { color: #2563eb; border-bottom-color: #2563eb; }
+                
+                /* 2. Ajustes de la tabla para que ocupe todo el ancho uniformemente */
+                .tabla-generador { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                .tabla-generador th { padding: 0.75rem; background-color: #f8fafc; color: #475569; font-weight: 600; font-size: 0.85rem; border: 1px solid #f3f4f6; text-align: center; }
+                .tabla-generador td { padding: 0.4rem !important; height: 110px; vertical-align: middle; border: 1px solid #f3f4f6; }
+                
+                /* 3. El Diseño Premium de las Tarjetas */
+                .tarjeta-clase-grid { 
+                    padding: 0.75rem; 
+                    border-radius: 0.5rem; 
+                    border: 1px solid transparent; 
+                    height: 100%; 
+                    min-height: 90px; 
+                    display: flex; 
+                    flex-direction: column; 
+                    justify-content: center; 
+                    position: relative; 
+                    transition: all 0.2s ease;
+                    box-sizing: border-box;
+                    width: 100%;
+                }
+                .tarjeta-clase-grid.estado-vacio { 
+                    border: 2px dashed #cbd5e1; 
+                    align-items: center; 
+                    color: #94a3b8; 
+                    cursor: pointer; 
+                    background-color: #f8fafc;
+                }
+                .tarjeta-clase-grid.estado-vacio:hover { 
+                    background-color: #f1f5f9; 
+                    border-color: #64748b; 
+                    color: #475569; 
+                    transform: scale(0.98);
+                }
+                .texto-vacio { font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px; }
+                
+                .tarjeta-clase-grid.estado-asignado {
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                    align-items: flex-start;
+                    text-align: left;
+                }
+                .tarjeta-clase-grid.estado-asignado:hover {
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    transform: translateY(-2px);
+                }
+                .titulo-clase-grid { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.4rem; display: block; line-height: 1.1; width: 90%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .texto-clase-grid { font-size: 0.75rem; color: #4b5563; display: flex; align-items: center; gap: 5px; line-height: 1.3; font-weight: 500; }
+                
+                /* 4. Botón flotante para eliminar */
+                .btn-eliminar-clase { position: absolute; top: 6px; right: 6px; background: white; border: 1px solid #fee2e2; border-radius: 4px; color: #ef4444; cursor: pointer; opacity: 0; transition: all 0.2s; padding: 4px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+                .tarjeta-clase-grid.estado-asignado:hover .btn-eliminar-clase { opacity: 1; }
+                .btn-eliminar-clase:hover { background: #fee2e2; transform: scale(1.1); }
+                
+                /* 5. Otros */
+                .celda-tiempo { font-size: 0.9rem; }
+                .estado-celda-receso { background-color: #f3f4f6; color: #9ca3af; font-weight: bold; letter-spacing: 2px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; min-height: 40px; }
+            `;
+        document.head.appendChild(style);
+    }
+
+    async function inicializarModuloGenerador() {
+        const selectorGrupo = document.getElementById('selector-grupo-generador');
+        if (!selectorGrupo) return;
+
+        // 1. Cargar Grupos al Selector
+        try {
+            const grupos = await fetchAPI('/grupos');
+            selectorGrupo.innerHTML = '<option value="">-- Selecciona un Grupo --</option>';
+            grupos.forEach(g => {
+                selectorGrupo.innerHTML += `<option value="${g.id}">${g.nombre} (${g.identificador})</option>`;
+            });
+        } catch (e) { console.error(e); }
+
+        // 2. Al seleccionar un grupo, cargar el tablero
+        selectorGrupo.addEventListener('change', (e) => {
+            const grupoId = e.target.value;
+            document.getElementById('alerta-conflictos-generador').style.display = 'none';
+            if (grupoId) {
+                cargarTableroGrupo(grupoId);
+            } else {
+                document.getElementById('cuerpo-tabla-generador').innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 4rem; color: #6b7280;"><p style="font-size: 1.1rem;">Selecciona un Grupo para comenzar</p></td></tr>`;
+            }
+        });
+
+        document.getElementById('btn-ocultar-alerta').addEventListener('click', () => {
+            document.getElementById('alerta-conflictos-generador').style.display = 'none';
+        });
+    }
+
+    async function cargarTableroGrupo(grupoId) {
+        try {
+            const horariosGlobales = await fetchAPI('/horarios');
+            const horariosDelGrupo = horariosGlobales.filter(h => h.grupo_id == grupoId);
+            dibujarTableroGenerador(grupoId, horariosDelGrupo);
+        } catch (e) { console.error("Error al cargar horarios:", e); }
+    }
+
+    function dibujarTableroGenerador(grupoId, horariosDelGrupo) {
+        const tbody = document.getElementById('cuerpo-tabla-generador');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        const configuracionHoras = [
+            { inicio: '07:00:00', fin: '08:30:00', etiqueta: '07:00 - 08:30', tipo: 'clase' },
+            { inicio: '08:30:00', fin: '10:00:00', etiqueta: '08:30 - 10:00', tipo: 'clase' },
+            { inicio: '10:00:00', fin: '10:30:00', etiqueta: '10:00 - 10:30', tipo: 'receso' },
+            { inicio: '10:30:00', fin: '12:00:00', etiqueta: '10:30 - 12:00', tipo: 'clase' },
+            { inicio: '12:00:00', fin: '13:30:00', etiqueta: '12:00 - 13:30', tipo: 'clase' },
+            { inicio: '13:30:00', fin: '15:00:00', etiqueta: '13:30 - 15:00', tipo: 'clase' }
+        ];
+        const diasSemanaGenerador = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+        configuracionHoras.forEach(hora => {
+            const tr = document.createElement('tr');
+            let htmlFila = `<td><div class="celda-tiempo"><div style="display:flex; flex-direction:column; align-items:center; font-weight:600; color:#4b5563;"><span>${hora.inicio.substring(0, 5)}</span><span style="font-size: 0.75rem; color:#9ca3af; font-weight:400;">${hora.fin.substring(0, 5)}</span></div></div></td>`;
+
+            if (hora.tipo === 'receso') {
+                htmlFila += `<td colspan="5"><div class="celda-interactiva estado-celda-receso">RECESO</div></td>`;
+                tr.innerHTML = htmlFila;
+            } else {
+                diasSemanaGenerador.forEach(dia => {
+                    const clase = horariosDelGrupo.find(h => h.dia_semana === dia && h.hora_inicio.startsWith(hora.inicio.substring(0, 5)));
+
+                    if (clase) {
+                        const colorHex = (clase.asignatura && clase.asignatura.color_hex) ? clase.asignatura.color_hex : '#2563eb';
+                        const nombreAsig = clase.asignatura ? clase.asignatura.nombre : 'Asignatura Borrada';
+                        const nombreDocente = clase.docente ? `${clase.docente.prefijo || ''} ${clase.docente.nombre_completo}` : 'Sin Asignar';
+                        const nombreAula = clase.aula ? clase.aula.nombre : 'Sin Aula';
+
+                        // ¡Aquí inyectamos tu diseño premium con los iconos SVG!
+                        htmlFila += `
+                            <td>
+                                <div class="tarjeta-clase-grid estado-asignado" style="background-color: ${colorHex}15; border-left: 4px solid ${colorHex};">
+                                    <span class="titulo-clase-grid" style="color: ${colorHex};" title="${nombreAsig}">${nombreAsig}</span>
+                                    
+                                    <span class="texto-clase-grid">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 12px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                        ${nombreDocente}
+                                    </span>
+                                    
+                                    <span class="texto-clase-grid" style="color: #6b7280; margin-top: 0.2rem;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="min-width: 12px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                                        ${nombreAula}
+                                    </span>
+                                    
+                                    <button class="btn-eliminar-clase" data-id="${clase.id}" title="Eliminar clase">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                </div>
+                            </td>`;
+                    } else {
+                        htmlFila += `
+                            <td>
+                                <div class="tarjeta-clase-grid estado-vacio btn-abrir-asignacion" data-dia="${dia}" data-inicio="${hora.inicio}" data-fin="${hora.fin}">
+                                    <span class="texto-vacio">+ ASIGNAR</span>
+                                </div>
+                            </td>`;
+                    }
+                });
+                tr.innerHTML = htmlFila;
+
+                tr.querySelectorAll('.btn-abrir-asignacion').forEach(celda => {
+                    celda.addEventListener('click', () => abrirModalAsignacion(celda.dataset.dia, celda.dataset.inicio, celda.dataset.fin, grupoId));
+                });
+                tr.querySelectorAll('.btn-eliminar-clase').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        await fetchAPI(`/horarios/${btn.dataset.id}`, { method: 'DELETE' });
+                        cargarTableroGrupo(grupoId);
+                    });
+                });
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function abrirModalAsignacion(dia, horaInicio, horaFin, grupoId) {
+        try {
+            // Obtenemos los catálogos para llenar los selects
+            const [periodos, asignaturas, docentes, aulas] = await Promise.all([
+                fetchAPI('/periodos'), fetchAPI('/asignaturas'), fetchAPI('/docentes?limit=100'), fetchAPI('/aulas')
+            ]);
+
+            const periodoActivo = periodos.find(p => p.es_activo);
+            if (!periodoActivo) {
+                return window.abrirModal({ titulo: 'Atención', contenido: 'Debes establecer un Periodo como "Activo" en el menú Periodos antes de generar horarios.', ocultarCancelar: true });
+            }
+
+            let opcionesAsignaturas = asignaturas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+            let opcionesDocentes = docentes.docentes.filter(d => d.es_activo).map(d => `<option value="${d.id}">${d.prefijo || ''} ${d.nombre_completo}</option>`).join('');
+            let opcionesAulas = aulas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+            window.abrirModal({
+                titulo: `Asignar Clase - ${dia} (${horaInicio.substring(0, 5)})`,
+                textoAccion: 'Guardar Asignación',
+                contenido: `
+                        <div class="grupo-formulario"><label class="etiqueta-formulario">Asignatura</label>
+                            <select id="modal-asignatura-id" class="input-estandar">${opcionesAsignaturas}</select>
+                        </div>
+                        <div class="grupo-formulario"><label class="etiqueta-formulario">Docente</label>
+                            <select id="modal-docente-id" class="input-estandar">${opcionesDocentes}</select>
+                        </div>
+                        <div class="grupo-formulario" style="margin-bottom:0;"><label class="etiqueta-formulario">Aula / Salón</label>
+                            <select id="modal-aula-id" class="input-estandar">${opcionesAulas}</select>
+                        </div>
+                    `,
+                accion: async () => {
+                    const payload = {
+                        periodo_id: periodoActivo.id,
+                        grupo_id: grupoId,
+                        dia_semana: dia,
+                        hora_inicio: horaInicio,
+                        hora_fin: horaFin,
+                        asignatura_id: document.getElementById('modal-asignatura-id').value,
+                        docente_id: document.getElementById('modal-docente-id').value,
+                        aula_id: document.getElementById('modal-aula-id').value
+                    };
+
+                    try {
+                        // Intentamos guardar, pero desactivamos el modal de error global para usar nuestra alerta roja
+                        await fetchAPI('/horarios', { method: 'POST', body: payload, mostrarModalError: false });
+                        window.cerrarModal();
+                        document.getElementById('alerta-conflictos-generador').style.display = 'none';
+                        cargarTableroGrupo(grupoId);
+                    } catch (err) {
+                        window.cerrarModal();
+                        const alerta = document.getElementById('alerta-conflictos-generador');
+                        document.getElementById('alerta-generador-texto').textContent = err.message;
+                        alerta.style.display = 'flex';
+                        // Animación de sacudida (opcional visual)
+                        alerta.style.transform = 'scale(1.02)'; setTimeout(() => alerta.style.transform = 'scale(1)', 150);
+                    }
+                }
+            });
+
+        } catch (error) { console.error("Error abriendo modal:", error); }
+    }
+}); 

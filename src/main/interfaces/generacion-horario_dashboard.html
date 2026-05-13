@@ -3,17 +3,17 @@
     <div class="barra-herramientas">
         <div>
             <h2 class="titulo-seccion">Generador de Horarios</h2>
-            <p class="texto-secundario" style="margin-top: 0.25rem;">Motor de asignación automática de clases</p>
+            <p class="texto-secundario" style="margin-top: 0.25rem;">Motor de asignación de clases y validación de conflictos</p>
         </div>
 
         <div class="acciones-herramientas">
-            <button class="boton-base boton-primario" style="width: auto;">
+            <button id="btn-generar-automatico" class="boton-base boton-primario" style="width: auto;">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
                     <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
                     <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
                 </svg>
-                Generar Horarios
+                Generar Automáticamente
             </button>
         </div>
     </div>
@@ -22,56 +22,44 @@
 
         <div class="controles-generador">
             <div class="grupo-pestanas">
-                <button class="pestana activa">Vista Grupo</button>
-                <button class="pestana">Vista Docente</button>
-                <button class="pestana">Vista Aula</button>
+                <button class="pestana activa" data-vista="grupo">Vista Grupo</button>
+                <button class="pestana" disabled style="opacity: 0.5; cursor: not-allowed;" title="Próximamente">Vista Docente</button>
+                <button class="pestana" disabled style="opacity: 0.5; cursor: not-allowed;" title="Próximamente">Vista Aula</button>
             </div>
-
-            <div class="grupo-filtro-paginacion">
-                <div class="filtro-grupo">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                    </svg>
-                    <div class="selector-texto">Grupo 5A</div>
-                </div>
-                <div class="paginacion-flechas">
-                    <button class="boton-flecha">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                    </button>
-                    <button class="boton-flecha">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="alerta-bloque-error">
-            <div class="alerta-contenido-izq">
-                <svg class="alerta-icono" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
-                    </path>
-                    <line x1="12" y1="9" x2="12" y2="13"></line>
-                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            
+            <div class="filtros-generador">
+                <svg class="icono-filtro" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
                 </svg>
-                <div class="alerta-textos">
-                    <span class="alerta-titulo">Se encontró 1 conflicto en la generación</span>
-                    <span class="alerta-descripcion">La docente "Ing. Ana L." está asignada a dos grupos (5A y 3B)
-                        simultáneamente el Jueves a las 08:30.</span>
-                </div>
+                
+                <select id="selector-grupo-generador" class="input-estandar" style="min-width: 220px; font-weight: 500;">
+                    <option value="">Cargando grupos...</option>
+                </select>
+                
+                <button class="boton-icono-borde" id="btn-grupo-anterior" title="Grupo Anterior">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+                <button class="boton-icono-borde" id="btn-grupo-siguiente" title="Grupo Siguiente">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
             </div>
-            <button class="boton-peligro-linea">Resolver manualmente</button>
         </div>
 
-        <div class="contenedor-tabla-horario">
-            <table class="tabla-horario tabla-generador">
+        <div id="alerta-conflictos-generador" class="alerta-peligro" style="display: none; margin-bottom: 1.5rem;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div style="flex: 1;">
+                <h4 class="titulo-alerta-peligro" id="alerta-generador-titulo">Se encontraron conflictos</h4>
+                <p class="texto-alerta-peligro" id="alerta-generador-texto">Hay docentes asignados en dos grupos a la misma hora.</p>
+            </div>
+            <button id="btn-ocultar-alerta" class="boton-base boton-peligro-borde">Ocultar</button>
+        </div>
+
+        <div class="contenedor-tabla-generador">
+            <table class="tabla-generador">
                 <thead>
                     <tr>
                         <th style="width: 10%;">HORA</th>
@@ -82,182 +70,13 @@
                         <th style="width: 18%;">VIERNES</th>
                     </tr>
                 </thead>
-                <tbody>
-
+                <tbody id="cuerpo-tabla-generador">
                     <tr>
-                        <td>
-                            <div class="celda-tiempo" style="flex-direction: column; gap: 0.125rem;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 0.25rem;">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span style="color: var(--color-negro); font-weight: 600;">07:00</span>
-                                <span>08:30</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Matemáticas</span>
-                                <span class="texto-clase-grid">Ing. Carlos M.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Física</span>
-                                <span class="texto-clase-grid">Dra. Elena R.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Matemáticas</span>
-                                <span class="texto-clase-grid">Ing. Carlos M.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Física</span>
-                                <span class="texto-clase-grid">Dra. Elena R.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-vacio">
-                                <span class="texto-vacio">+ ASIGNAR</span>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            <div class="celda-tiempo" style="flex-direction: column; gap: 0.125rem;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 0.25rem;">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span style="color: var(--color-negro); font-weight: 600;">08:30</span>
-                                <span>10:00</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Programación</span>
-                                <span class="texto-clase-grid">Mtro. Juan P.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-vacio">
-                                <span class="texto-vacio">+ ASIGNAR</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Programación</span>
-                                <span class="texto-clase-grid">Mtro. Juan P.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-conflicto">
-                                <div class="cabecera-conflicto">
-                                    <span class="titulo-clase-grid">Bases de Datos</span>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path
-                                            d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
-                                        </path>
-                                        <line x1="12" y1="9" x2="12" y2="13"></line>
-                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                                    </svg>
-                                </div>
-                                <span class="texto-clase-grid">Ing. Ana L.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Bases de Datos</span>
-                                <span class="texto-clase-grid">Ing. Ana L.</span>
-                                <span class="texto-clase-grid">Aula 104</span>
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            <div class="celda-tiempo" style="flex-direction: column; gap: 0.125rem;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 0.25rem;">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span style="color: var(--color-negro); font-weight: 600;">10:00</span>
-                                <span>10:30</span>
-                            </div>
-                        </td>
-                        <td colspan="5">
-                            <div class="celda-interactiva estado-celda-receso" style="letter-spacing: 0.2em;">RECESO
-                            </div>
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            <div class="celda-tiempo" style="flex-direction: column; gap: 0.125rem;">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 0.25rem;">
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                                </svg>
-                                <span style="color: var(--color-negro); font-weight: 600;">10:30</span>
-                                <span>12:00</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Inglés V</span>
-                                <span class="texto-clase-grid">Lic. Sarah T.</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Inglés V</span>
-                                <span class="texto-clase-grid">Lic. Sarah T.</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-vacio">
-                                <span class="texto-vacio">+ ASIGNAR</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Ética</span>
-                                <span class="texto-clase-grid">Lic. Roberto G.</span>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="tarjeta-clase-grid estado-asignado">
-                                <span class="titulo-clase-grid">Ética</span>
-                                <span class="texto-clase-grid">Lic. Roberto G.</span>
-                            </div>
+                        <td colspan="6" style="text-align: center; padding: 4rem; color: #6b7280;">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; opacity: 0.5;">
+                                <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <p style="font-size: 1.1rem;">Selecciona un Grupo para comenzar</p>
                         </td>
                     </tr>
                 </tbody>
